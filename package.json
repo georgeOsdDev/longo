@@ -1,0 +1,23 @@
+{
+  "name"        : "longo",
+  "description" : "Asynchronous local database with a flavor of FRP.",
+  "homepage"    : "https://github.com/georgeOsdDev/Longo",
+  "keywords"    : ["database", "functional", "client", "browser"],
+  "author"      : "Takeharu Oshida <georgeosddev@gmail.com>",
+  "repository"  : {"type": "git", "url": "git://github.com/georgeOsdDev/longo.git"},
+  "main"        : "longo.js",
+  "version"     : "1.0.0",
+  "scripts": {
+    "build": "echo TODO_build",
+    "test": "echo TODO_test"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+  "licenses": [
+    {
+      "type": "MIT",
+      "url" : "https://raw.github.com/georgeOsdDev/longo/master/LICENSE"
+    }
+  ],
+  "files"   : ["longo.js", "longo.min.js", "longoCollectionWorker.js","longoCollectionWorker.min.js", "LICENSE"]
+}

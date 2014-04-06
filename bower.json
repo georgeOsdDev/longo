@@ -1,0 +1,20 @@
+{
+  "name": "longo",
+  "main": "longo.js",
+  "version": "0.0.0",
+  "authors": [
+    "Takeharu.Oshida <georgeosddev@gmail.com>"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "lib",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "underscore": "*"
+  }
+}
