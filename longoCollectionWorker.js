@@ -1,5 +1,10 @@
 importScripts('./lib/underscore/underscore.js');
 
+function ObjectId(){
+  this.val = Date.now();
+}
+
+
 var db = [];
 self.addEventListener('message', function(e) {
   var data   = e.data   || {},
@@ -31,7 +36,7 @@ self.addEventListener('message', function(e) {
       break;
 
     case 'save':
-      if (!data.doc["_id"]) data.doc["_id"] = Date.now();
+      if (!data.doc["_id"]) data.doc["_id"] = new ObjectId();
       self.db.push(data.doc);
       self.postMessage({"seq":seq, "errCd":0, "result":data.doc});
       break;
@@ -112,6 +117,30 @@ function doWhenOrElse(cond, action, alternative, values, context) {
     return action.apply(context, arr);
   else
     return alternative.apply(context, arr);
+}
+
+// http://stackoverflow.com/questions/1248302/javascript-object-size
+function roughSizeOfObject( object ) {
+  var objectList = [];
+  var stack = [ object ];
+  var bytes = 0;
+
+  while ( stack.length ) {
+    var value = stack.pop();
+    if ( typeof value === 'boolean'){
+      bytes += 4;
+    } else if (typeof value === 'string'){
+      bytes += value.length * 2;
+    } else if (typeof value === 'number'){
+      bytes += 8;
+    } else if (typeof value === 'object' && objectList.indexOf( value ) === -1){
+      objectList.push(value);
+      for (var i in value) {
+        stack.push(value[ i ]);
+      }
+    }
+  }
+  return bytes;
 }
 
 

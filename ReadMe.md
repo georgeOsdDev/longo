@@ -46,7 +46,9 @@ Asynchronous local database with a flavor of FRP.
 
 ### Collection
 
-### Query
+### Cursor
+
+	db.collection("test").cursor({"score":{$gt:100}}, {"_id":0}).sort({"score":1}).limit(5).done(cb);
 
 ### Query Operators
 
