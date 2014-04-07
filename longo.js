@@ -1,5 +1,12 @@
+/*!
+ * longo
+ * https://github.com/georgeOsdDev/Longo
+ *
+ * The MIT License (MIT)
+ * Copyright (c) 2014 Takeharu Oshida <georgeosddev@gmail.com>
+ */
 (function(global, undefined){
-
+  "use strict";
   var VERSION = "0.1.0";
   var LONOGROOT = "/Longo.js";
   (function(){

@@ -1,3 +1,10 @@
+/*!
+ * longo
+ * https://github.com/georgeOsdDev/Longo
+ *
+ * The MIT License (MIT)
+ * Copyright (c) 2014 Takeharu Oshida <georgeosddev@gmail.com>
+ */
 importScripts('./lib/underscore/underscore.js');
 
 function ObjectId(){
