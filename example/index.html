@@ -12,23 +12,24 @@
         <script type="text/javascript" src ="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js"></script>
         <script type="text/javascript" src="../longo.js"></script>
         <script type="text/javascript">
-          var db = new Longo();
-          console.log(db.collections());
-          db.collection("test").findAll({}, function(result){console.log(result)});
-          db.collection("test").save({name:"testdoc","val":1}, function(result){console.log(result)});
-          db.collection("test").save({name:"testdoc2","val":2}, function(result){console.log(result)});
-          db.collection("test").findAll({}, function(result){console.log(result)});
-          db.collection("test").findAll({"_id":0}, function(result){console.log(result)});
-          db.collection("test").findAll({"name":1}, function(result){console.log(result)});
-          db.collection("test").findAll({"name":1,"_id":0}, function(result){console.log(result)});
+          Longo.setRoot("../")
+          var db = new Longo.DB("School");
+          console.log(db.getCollectionNames());
+          db.collection("test").find({}).done(function(err, result){console.log(err, result)});
+          db.collection("test").save({name:"testdoc","val":1}).done(function(err, result){console.log(err, result)});
+          // db.collection("test").save({name:"testdoc2","val":2}, function(result){console.log(result)});
+          db.collection("test").find({}).done(function(err, result){console.log(err, result)});
+          // db.collection("test").find({"_id":0}, function(result){console.log(result)});
+          // db.collection("test").find({"name":1}, function(result){console.log(result)});
+          // db.collection("test").find({"name":1,"_id":0}, function(result){console.log(result)});
 
-          db.collection("test").drop(function(result){
+          // db.collection("test").drop(function(result){
 
-            db.collection("test").findAll({}, function(result){console.log("1", result)});
-            db.collection("test").save({name:"testdoc3","val":3}, function(result){console.log(result)});
-            db.collection("test").findAll({}, function(result){console.log("2", result)});
+          //   db.collection("test").find({}, function(result){console.log("1", result)});
+          //   db.collection("test").save({name:"testdoc3","val":3}, function(result){console.log(result)});
+          //   db.collection("test").find({}, function(result){console.log("2", result)});
 
-          });
+          // });
 
         </script>
     </body>
