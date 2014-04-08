@@ -15,12 +15,12 @@ module.exports = (grunt) ->
         options:
           #the banner is inserted at the top of the output
           banner: """
-                  /*!
-                   * <%= pkg.name %>
-                   * <%= pkg.homepage %>
+                  /*
+                   * <%= pkg.name %> v-<%= pkg.version %>
+                   * Source code can be found at <%= pkg.homepage %>
                    *
-                   * The MIT License (MIT)
-                   * Copyright (c) 2014 <%= pkg.author %>
+                   * @license   The MIT License (MIT)
+                   * @copyright Copyright (c) 2014 <%= pkg.author %>
                    */
 
                   """
@@ -31,48 +31,29 @@ module.exports = (grunt) ->
           'longo.min.js': 'longo.js'
           'longoCollectionWorker.min.js': 'longoCollectionWorker.js'
 
-    usebanner:
-      main:
+    # usebanner:
+    #   main:
+    #     options:
+    #       position: 'top'
+    #       banner: """
+    #               /*
+    #                * <%= pkg.name %> v-<%= pkg.version %>
+    #                * Source code can be found at <%= pkg.homepage %>
+    #                *
+    #                * @license   The MIT License (MIT)
+    #                * @copyright Copyright (c) 2014 <%= pkg.author %>
+    #                */
+
+    #               """
+    #       linebreak: false
+    #     files:
+    #       src: ['longo.js','longoCollectionWorker.js']
+
+    jsdoc:
+      dist:
+        src: ['longo.js', 'longoCollectionWorker.js', 'ReadMe.md']
         options:
-          position: 'top'
-          banner: """
-                  /*!
-                   * <%= pkg.name %>
-                   * <%= pkg.homepage %>
-                   *
-                   * The MIT License (MIT)
-                   * Copyright (c) 2014 <%= pkg.author %>
-                   */
-
-                  """
-          linebreak: false
-        files:
-          src: ['longo.js','longoCollectionWorker.js']
-
-
-
-    yuidoc:
-      main:
-        name: 'LONGO API'
-        description: '<%= pkg.description %>'
-        version: '<%= pkg.version %>'
-        url: '<%= pkg.hompage %>'
-        options:
-          paths: '.'
-          outdir: 'docs'
-          syntaxtype: 'js'
-          extension: '.js'
-          linkNatives: "true"
-          attributesEmit: "true"
-
-    mochaTest:
-      test:
-        src: ['test/spec/*.test.coffee']
-        options:
-          reporter: 'tap'
-          captureFile: 'test/results/result.txt'
-          'no-colors': true
-
+          destination: 'doc'
 
     mocha_phantomjs:
       all: ['test/spec/**/*.html']
@@ -85,12 +66,12 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks 'grunt-banner'
   grunt.loadNpmTasks 'grunt-contrib-uglify'
   grunt.loadNpmTasks 'grunt-contrib-jshint'
-  grunt.loadNpmTasks 'grunt-contrib-yuidoc'
+  grunt.loadNpmTasks 'grunt-jsdoc'
   grunt.loadNpmTasks 'grunt-mocha-test'
   grunt.loadNpmTasks 'grunt-mocha-phantomjs'
 
 
-  grunt.registerTask 'build',    ['jshint','mocha_phantomjs','uglify','usebanner','yuidoc']
+  grunt.registerTask 'build',    ['jshint','mocha_phantomjs','uglify','usebanner','jsdoc']
 
   grunt.registerTask 'default', 'Log some stuff.', ->
     grunt.log.write("""
@@ -98,7 +79,7 @@ module.exports = (grunt) ->
       * jshint          : Run linter
       * uglify          : Run UglifyJS command
       * usebanner       : Add bunner comment
-      * yuidoc          : Publish API documents
+      * jsdoc           : Publish API documents
       * mochaTest       : Run cli test
       * mocha_phantomjs : Run Phantom.JS Test
       * build           : Do everything avobe

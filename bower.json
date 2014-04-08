@@ -15,6 +15,7 @@
     "tests"
   ],
   "dependencies": {
-    "underscore": "*"
+    "underscore": "*",
+    "underscore-query":"*"
   }
 }

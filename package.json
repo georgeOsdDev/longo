@@ -1,12 +1,20 @@
 {
-  "name"        : "longo",
-  "description" : "Asynchronous local database with a flavor of FRP.",
-  "homepage"    : "https://github.com/georgeosddev/longo",
-  "keywords"    : ["database", "functional", "client", "browser"],
-  "author"      : "Takeharu Oshida <georgeosddev@gmail.com>",
-  "repository"  : {"type": "git", "url": "git://github.com/georgeosddev/longo.git"},
-  "main"        : "longo.js",
-  "version"     : "0.1.0",
+  "name": "longo",
+  "description": "Asynchronous local database with a flavor of FRP.",
+  "homepage": "https://github.com/georgeosddev/longo",
+  "keywords": [
+    "database",
+    "functional",
+    "client",
+    "browser"
+  ],
+  "author": "Takeharu Oshida <georgeosddev@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/georgeosddev/longo.git"
+  },
+  "main": "longo.js",
+  "version": "0.1.0",
   "scripts": {
     "bower": "bower install",
     "build": "grunt build",
@@ -22,19 +30,23 @@
     "grunt-banner": "~0.2.1",
     "grunt-contrib-jshint": "~0.6.3",
     "grunt-contrib-uglify": "~0.2.0",
-    "grunt-contrib-yuidoc": "~0.5.0",
+    "grunt-jsdoc": "^0.5.4",
     "grunt-mocha-test": "~0.8.1",
     "grunt-mocha-phantomjs": "~0.4.3"
   },
   "licenses": [
     {
       "type": "MIT",
-      "url" : "https://raw.github.com/georgeosddev/longo/master/LICENSE"
+      "url": "https://raw.github.com/georgeosddev/longo/master/LICENSE"
     }
   ],
-  "files"   : [
-    "longo.js", "longo.min.js", "longo.min.map",
-    "longoCollectionWorker.js", "longoCollectionWorker.min.js", "longoCollectionWorker.min.map",
+  "files": [
+    "longo.js",
+    "longo.min.js",
+    "longo.min.map",
+    "longoCollectionWorker.js",
+    "longoCollectionWorker.min.js",
+    "longoCollectionWorker.min.map",
     "LICENSE"
   ]
 }

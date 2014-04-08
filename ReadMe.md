@@ -37,22 +37,65 @@ Asynchronous local database with a flavor of FRP.
 ## Dependencies
 
  * [Underscore.js](http://underscorejs.org/)
+ * [underscore-query](https://github.com/davidgtonge/underscore-query)
 
 ## Usage
 
+Download [file](http://path.to.tarball) and put it to your server.
+
+Make sure that `longo.js`, `longoCollectionWorker.js`, `lib` is put in same directory eg.`Longo`.
+
+Just only `longo.js` (or `longo.min.js`) is need to be loaded in html.
+Other files will be imported at worker thread.
+
+	<script type="text/javascript" src="path/to/Longo/longo.js"></script>
+
+
 ## APIs
 
-### DB
+Longo is focusing to be work as like Mongo Shell in browser world.
+See [diffrence between Mongo Shell](./supportedMongoShell).
 
-### Collection
+### Basic Example
 
-### Cursor
+Create database.
 
-	db.collection("test").cursor({"score":{$gt:100}}, {"_id":0}).sort({"score":1}).limit(5).done(cb);
+	var db = new Longo("zoo");
+
+Create collection and save document.
+
+	var opId = db.collection("animals")
+								.insert([
+								  {"name":"tiger",  count:5,  "food":["chicken", "water"]},
+								  {"name":"monkey", count:15, "food":["apple", "banana", "water"]}
+								])
+							 	.done(function(error, result){
+							 		if(error) return console.log("fail to save", error);
+							 		console.log("tiger saved");
+							  });
+
+Search document from collection.
+
+	var opId = db.collection("animal")
+							  .find({"count":{"gt":3}}, {"_id":0})
+							  .sort({"name":1})
+							  .limit(5)
+							  .done(function(error, result){
+							 		if(error) return console.log("fail to find", error);
+							 		console.log(result);
+							 	});
+
+For more detail : See [Api Reference](http://path.to.documents).
 
 ### Query Operators
 
+### Aggregation Operators
+
 ## Browser Support
+
+Longo use HTML5 [Web Worker](https://developer.mozilla.org/en/docs/Web/Guide/Performance/Using_web_workers).
+
+Browser compatibility is described [here](https://developer.mozilla.org/en/docs/Web/Guide/Performance/Using_web_workers#Browser_Compatibility)
 
 ## Build
 
@@ -60,4 +103,4 @@ Asynchronous local database with a flavor of FRP.
 
 Source code can be found on [github](https://github.com/georgeOsdDev/markdown-edit), licenced under [MIT](http://opensource.org/licenses/mit-license.php).
 
-Developed by [Takeharu.Oshida](http://about.me/takeharu.oshida)
+Developed by [Takeharu.Oshida](http://about.me/takeharu.oshida).
