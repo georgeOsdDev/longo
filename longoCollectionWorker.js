@@ -1,130 +1,114 @@
-/*!
+/*
  * longo
  * https://github.com/georgeOsdDev/Longo
  *
  * The MIT License (MIT)
  * Copyright (c) 2014 Takeharu Oshida <georgeosddev@gmail.com>
  */
-importScripts('./lib/underscore/underscore.js');
+
+/* global self:false, Longo:false */
+
+// import utilities
+importScripts("./longo.js",
+              "./lib/underscore/underscore.js",
+              "./lib/underscore-query/lib/underscore-query.min.js");
+
+var Utils = Longo.Utils;
+
+// global parameter for this collection worker
+self.dataset = [];
+self.option  = {
+  capped:false,
+};
+
+var SKIP_REST = "SKIP_REST";
+
+// var operator = {
+
+//   $gt: function(a, b) {
+//         return b < a;
+//       },
+//   $gte: function(a, b) {
+//         return b <= a;
+//       },
+//   $in: function(a, b) {
+//         return _.contains(Utils.toArray(b), a);
+//       }
+//   $lt: function(a, b) {
+//         return a < b;
+//       },
+//   $lte: function(a, b) {
+//         return a <= b;
+//       },
+//   $ne: function(a, b) {
+//         return a != b;
+//       },
+
+//   $nin: function(a, b) {
+//         return !_.contains(Utils.toArray(b), a);
+//       },
+
+//   $or: function(list){
+//         _.map(list, query);
+//         _.some(a);
+//       },
+//   $and: function(list){
+//         _.every(a);
+//       }
+//   $not: function(expression){
+//           return !expression;
+//         }
+//   $nor: function()
+
+//   $exists
+//   $type
+
+//   $mod
+//   $regex
+//   $text
+//   $where
+
+//   $all
+//   $elemMatch
+//   $size
+
+// }
+
 
 function ObjectId(){
+  "use strict";
   this.val = Date.now();
 }
 
+function doStart(command){
+  "use strict";
+  self.option = command.option;
+  return[null, []];
+}
 
-var db = [];
-self.addEventListener('message', function(e) {
-  var data   = e.data   || {},
-      cmd    = data.cmd || 'unknown',
-      seq    = data.seq || -1,
-      result = []
-      ;
+function doFind(dataset, criteria){
+  "use strict";
+  var query = !_.isObject(criteria) ? (!_.isArray(criteria) && !_.isFunction(criteria)) ? criteria : {} : {};
+  return [null, _.query(dataset, query)];
+}
 
-  switch (cmd) {
-
-    case 'start':
-      self.Logger = {};
-      self.Logger.log = function(msg){console.log("Longo." + data.name + ": "+ msg);};
-      self.Logger.error = function(msg){console.error("Longo." + data.name + ": "+ msg);};
-      self.Logger.log("start");
-
-      self.postMessage({"seq":seq, "errCd":0});
-      break;
-
-    case 'drop':
-      self.db = null;
-      self.postMessage({"seq":seq, "errCd":0});
-      self.close(); // Terminates the worker.
-      break;
-
-    case 'findAll':
-      result = project(self.db, data.projection);
-      self.postMessage({"seq":seq, "errCd":0, "result":result});
-      break;
-
-    case 'save':
-      if (!data.doc["_id"]) data.doc["_id"] = new ObjectId();
-      self.db.push(data.doc);
-      self.postMessage({"seq":seq, "errCd":0, "result":data.doc});
-      break;
-
-    case 'removeAll':
-      self.db = [];
-      self.postMessage({"seq":seq, "errCd":0, "result":[]});
-      break;
-
-    default:
-      self.postMessage({"seq":seq, "errCd":1, "result":cmd + " is not supported."});
+function doInsert(docs) {
+  "use strict";
+  if (_.size(docs) === 0){
+    return [SKIP_REST, []];
   }
-}, false);
+  var doc = _.first(docs);
 
-
-function noop(){
-  return void 0;
-}
-function asNoop(){
-  return noop;
-}
-
-function aSlice(obj){
-  return Array.prototype.slice.apply(obj);
+  if (!doc._id) {
+    doc._id = new ObjectId();
+  } else {
+    if (_.where(self.dataset, {"_id":doc._id}).length > 0) return [Longo.Error.DUPLICATE_KEY_ERROR, doc];
+  }
+  self.dataset.push(doc);
+  return doInsert(_.rest(docs));
 }
 
-function isArray(obj){
-  return Array.isArray ? Array.isArray(obj) : (toString.call(obj) === "[object Array]");
-}
 
-function toArray(obj) {
-  return isArray(obj) ? obj : [obj];
-}
-
-function existy(val){
-  return val !== null && val !== undefined;
-}
-
-function truthy(val){
-  return (val !== false) && existy(val);
-}
-
-function isTrue(val){
-  return val === true;
-}
-
-function isFalse(val){
-  return val === false;
-}
-
-function isNegativeNum(val){
-  return !truthy(val) || (_.isNumber(val) && val < 0);
-}
-
-function isZero(val){
-  return val === 0;
-}
-
-function isOne(val){
-  return val === 1;
-}
-
-function isPositiveNum(val){
-  return !isNegative(val) && !isZero(val);
-}
-
-function doWhen(cond, action, values, context) {
-  var arr = toArray(values);
-  if(truthy(cond))
-    return action.apply(context, arr);
-  else
-    return undefined;
-}
-
-function doWhenOrElse(cond, action, alternative, values, context) {
-  var arr = toArray(values);
-  if(truthy(cond))
-    return action.apply(context, arr);
-  else
-    return alternative.apply(context, arr);
-}
 
 // http://stackoverflow.com/questions/1248302/javascript-object-size
 function roughSizeOfObject( object ) {
@@ -166,7 +150,7 @@ function roughSizeOfObject( object ) {
  * A projection cannot contain both include and exclude specifications, except for the exclusion of the _id field.
  * In projections that explicitly include fields, the _id field is the only field that you can explicitly exclude.
  */
-function project(data, projection){
+function project(dataset, projection){
   var pairs     = _.pairs(projection),
       includes  = _.filter(pairs, function(p){return isOne(p[1])  || isTrue(p[1]);}),
       excludes  = _.filter(pairs, function(p){return isZero(p[1]) || isFalse(p[1]);}),
@@ -188,3 +172,50 @@ function project(data, projection){
 }
 
 
+
+// self is WebWorker's global context
+self.send = function(message) {
+  "use strict";
+  var json  = JSON.stringify(message),
+      bytes = Utils.str2ab(json)
+      ;
+  self.postMessage(bytes, [bytes.buffer]);
+};
+
+self.doCommand = function(memo, command) {
+  "use strict";
+  var error   = memo[0],
+      dataset = memo[1]
+      ;
+  if (error) return memo;
+
+  switch(command.cmd) {
+  case "start":
+    return doStart(command);
+  case "find":
+    return doFind(self.dataset, Utils.getOrElse(command.criteria, {}));
+  case "insert":
+    return doInsert(Utils.toArray(Utils.getOrElse(command.doc),[]));
+  default :
+    return dataset;
+  }
+};
+
+self.addEventListener("message", function(e) {
+  "use strict";
+  var request, data, cmds, seq, result = [];
+  request = Utils.tryParseJSON(Utils.ab2str(e.data));
+
+  if (request[0]) return self.send({"seq":-1, "error": request[0], "result": []});
+
+  data = request[1] || {};
+  cmds = data.cmds;
+  seq  = data.seq;
+
+  result = _.reduce(cmds, self.doCommand, [null, self.dataset]);
+
+  if (result[0] === SKIP_REST ) result[0] = null;
+
+  self.send({"seq": seq, "error": result[0] , "result": result[1]});
+
+}, false);
