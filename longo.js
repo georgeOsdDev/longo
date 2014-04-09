@@ -56,6 +56,8 @@
   Longo.Error.COLLECTION_IS_ALREADY_EXISTS = 6;
   Longo.Error.COLLECTION_IS_NOT_STARTED = 7;
   Longo.Error.DUPLICATE_KEY_ERROR = 8;
+  Longo.Error.DOCUMENT_NOT_FOUND = 9;
+  Longo.Error.MOD_ID_NOT_ALLOWED = 10;
 
 
   var Utils = Longo.Utils = {
@@ -474,13 +476,8 @@
 
   Collection.prototype.save = function(doc) {
     var cmd = {
-      "cmd": "update",
-      "criteria": {},
+      "cmd": "save",
       "doc": doc,
-      "option": {
-        "upsert": true,
-        "multi": true
-      }
     };
     return new Cursor(this, cmd);
   };
@@ -562,7 +559,7 @@
     } else {
       this.collection = args[0];
       this.cmds = Utils.toArray(args[1]);
-      this.wrapCb = Utils.getOrElse(Utils.toArray(args[2]), []);
+      this.wrapCb = Utils.toArray(Utils.getOrElse(args[2], Utils.noop));
     }
   };
 
@@ -573,8 +570,9 @@
       "cmds": this.cmds
     };
     callback = function() {
-      // _.invoke(self.wrapCb, "call");
-      userCallback.apply(Utils.aSlice(arguments));
+      var args = Utils.aSlice(arguments);
+      _.invoke(self.wrapCb, "call");
+      userCallback.apply(null, args);
     };
 
     return this.collection.send(message, callback);

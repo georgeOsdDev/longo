@@ -16,10 +16,11 @@
           var db = new Longo.DB("School");
           console.log(db.getCollectionNames());
           db.collection("test").find({}).done(function(err, result){console.log(err, result)});
+          console.log(db.getCollectionNames());
           db.collection("test").save({name:"testdoc","val":1}).done(function(err, result){console.log(err, result)});
-          // db.collection("test").save({name:"testdoc2","val":2}, function(result){console.log(result)});
+          db.collection("test").save({name:"testdoc2","val":2}).done(function(err, result){console.log(err, result)});
           db.collection("test").find({}).done(function(err, result){console.log(err, result)});
-          // db.collection("test").find({"_id":0}, function(result){console.log(result)});
+          db.collection("test").find({"val":1}).done(function(err, result){console.log(err, result)});
           // db.collection("test").find({"name":1}, function(result){console.log(result)});
           // db.collection("test").find({"name":1,"_id":0}, function(result){console.log(result)});
 
