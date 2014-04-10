@@ -4,8 +4,10 @@ module.exports = (grunt) ->
   grunt.initConfig
     pkg: grunt.file.readJSON 'package.json'
 
+    clean: ['dest/*', 'doc/*']
+
     jshint:
-      test: ['longo.js', 'longoCollectionWorker.js']
+      test: ['src/*.js']
       options:
         jshintrc: '.jshintrc'
         reporter: require 'jshint-stylish'
@@ -25,62 +27,64 @@ module.exports = (grunt) ->
 
                   """
 
-          mangle:true
-          sourceMap:'longo.min.map'
+          mangle: true
+          sourceMap: true
         files:
-          'longo.min.js': 'longo.js'
-          'longoCollectionWorker.min.js': 'longoCollectionWorker.js'
-
-    # usebanner:
-    #   main:
-    #     options:
-    #       position: 'top'
-    #       banner: """
-    #               /*
-    #                * <%= pkg.name %> v-<%= pkg.version %>
-    #                * Source code can be found at <%= pkg.homepage %>
-    #                *
-    #                * @license   The MIT License (MIT)
-    #                * @copyright Copyright (c) 2014 <%= pkg.author %>
-    #                */
-
-    #               """
-    #       linebreak: false
-    #     files:
-    #       src: ['longo.js','longoCollectionWorker.js']
+          'dest/longo.min.js': 'src/longo.js'
+          'dest/longoWorker.min.js': 'src/longoWorker.js'
 
     jsdoc:
       dist:
-        src: ['longo.js', 'longoCollectionWorker.js', 'ReadMe.md']
+        src: ['src/*.js', 'ReadMe.md']
         options:
           destination: 'doc'
 
     mocha_phantomjs:
-      all: ['test/spec/**/*.html']
+      all: ['test/*.html']
       options:
         reporter: 'tap'
-        output: 'test/results/phantom.txt'
+        output: 'test/result/result.txt'
         C: ' '
 
+    copy:
+      src:
+        files: [
+          {
+            expand: true
+            flatten: true
+            src: ['src/*.js']
+            dest: 'dest'
+            filter: 'isFile'
+          }
+        ]
+      lib:
+        files:[
+          {
+            expand: true
+            cwd: 'node_modules/'
+            src: ['underscore/**','underscore-query/**']
+            dest: 'dest/lib'
+          }
+
+        ]
+
   # load
-  grunt.loadNpmTasks 'grunt-banner'
+  grunt.loadNpmTasks 'grunt-contrib-clean'
+  grunt.loadNpmTasks 'grunt-contrib-copy'
   grunt.loadNpmTasks 'grunt-contrib-uglify'
   grunt.loadNpmTasks 'grunt-contrib-jshint'
   grunt.loadNpmTasks 'grunt-jsdoc'
-  grunt.loadNpmTasks 'grunt-mocha-test'
   grunt.loadNpmTasks 'grunt-mocha-phantomjs'
 
-
-  grunt.registerTask 'build',    ['jshint','mocha_phantomjs','uglify','usebanner','jsdoc']
+  grunt.registerTask 'build', ['clean', 'jshint', 'uglify', 'copy', 'mocha_phantomjs', 'jsdoc'];
 
   grunt.registerTask 'default', 'Log some stuff.', ->
     grunt.log.write("""
       --- Available tasks ---
+      * clean           : Clean up build results
       * jshint          : Run linter
       * uglify          : Run UglifyJS command
-      * usebanner       : Add bunner comment
-      * jsdoc           : Publish API documents
-      * mochaTest       : Run cli test
       * mocha_phantomjs : Run Phantom.JS Test
+      * jsdoc           : Publish API documents
       * build           : Do everything avobe
     """).ok()
