@@ -9,9 +9,9 @@
 /* global self:false, Longo:false */
 
 // import utilities
-importScripts("./longo.js",
-              "./lib/underscore/underscore.js",
-              "./lib/underscore-query/lib/underscore-query.min.js");
+importScripts("./lib/underscore/underscore.js",
+              "./lib/underscore-query/lib/underscore-query.min.js",
+              "./longo.js");
 
 var Utils = Longo.Utils;
 
@@ -22,7 +22,7 @@ self.option  = {
 };
 self.isUpdatedBySeq = {};
 var SKIP_REST = "SKIP_REST";
-var chars     = "abcdefghijklmnopqrstuvwxyz0123456789".split("");
+var CHARS     = "abcdefghijklmnopqrstuvwxyz0123456789".split("");
 
 /*
  * return random string length 24
@@ -30,7 +30,7 @@ var chars     = "abcdefghijklmnopqrstuvwxyz0123456789".split("");
  */
 function objectId(val){
   "use strict";
-  return val || Date.now() + _.shuffle(chars).join("").substr(0, 11);
+  return val || Date.now() + _.shuffle(CHARS).join("").substr(0, 11);
 }
 
 function toQuery(criteria) {
@@ -119,10 +119,9 @@ function doSave(docs, seq){
 
   if (!doc._id) {
     result = doInsert(Utils.toArray(doc), seq);
-    if (result[0]/*error*/) return result;
   } else {
     result = doUpdate({"_id": doc._id}, doc, {upsert:true}, seq);
-    if (result[0]/*error*/) return result;
+    if (result[0] && result[0] !== SKIP_REST) return result;
   }
   return doSave(_.rest(docs), seq);
 }

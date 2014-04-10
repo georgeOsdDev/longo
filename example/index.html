@@ -1,79 +1,186 @@
 <!doctype html>
-<html>
-    <head>
-        <meta charset="utf-8">
-        <meta name="description" content="">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Longo.js example</title>
-        <link rel="stylesheet" href="css/style.css">
-    </head>
-    <body>
-      <a href="http://www.reactivemanifesto.org/"> <img style="border: 0; position: fixed; right: 0; top:0; z-index: 9000" src="//d379ifj7s9wntv.cloudfront.net/reactivemanifesto/images/ribbons/we-are-reactive-red-right.png"> </a>
-        <script type="text/javascript" src ="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js"></script>
-        <script type="text/javascript" src="../longo.js"></script>
-        <script type="text/javascript">
+<html lang="en">
+  <head>
+      <meta charset="utf-8">
+      <meta name="description" content="Longo.js example">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>Longo.js example</title>
+      <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+      <link rel="stylesheet" href="style.css">
+      <script src="https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js"></script>
+      <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+      <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js"></script>
+      <script src="./EventEmitter.min.js"></script>
+      <script src="../longo.js"></script>
+  </head>
+  <body>
+    <a href="http://www.reactivemanifesto.org/"> <img style="border: 0; position: fixed; right: 0; top:0; z-index: 9000" src="//d379ifj7s9wntv.cloudfront.net/reactivemanifesto/images/ribbons/we-are-reactive-red-right.png"> </a>
 
-          function Logging(msg){
-            return function(err, result){
-              console.info(msg+"-------------->");
-              console.info("[error]:",err);
-              console.info("[result]:",result);
-              console.info(" ");
-            };
-          };
+    <div>
+      <p>Create Database<p>
+      <pre class="prettyprint">
+db = new Longo.DB("testDB");</pre>
+      <div id="result1">
+      </div>
+    </div>
 
-          Longo.setRoot("../")
-          var db = new Longo.DB("School");
-          db.on("error", function(){console.error(arguments)});
-          console.info(db.getCollectionNames());
+    <div>
+      <p>Get Collection Names <button id="button2">Run</button><p>
+      <pre class="prettyprint">
+db.getCollectionNames();</pre>
+      <div id="result2">
+      </div>
+    </div>
+
+    <div>
+      <p>Exec Query <button id="button3">Run</button><p>
+      <pre class="prettyprint">
+db.collection("test").find({})
+                     .done(cb)</pre>
+      <div id="result3">
+      </div>
+    </div>
+
+    <div>
+      <p>Get Collection Names Again <button id="button4">Run</button><p>
+      <pre class="prettyprint">
+db.getCollectionNames();</pre>
+      <div id="result4">
+      </div>
+    </div>
+
+    <div>
+      <p>Insert data <button id="button5">Run</button><p>
+      <pre class="prettyprint">
+db.collection("test").save([
+                            {name:"test1","val":1},
+                            {name:"test2","val":2}
+                    ]).done(cb);</pre>
+      <div id="result5">
+      </div>
+    </div>
+
+    <div>
+      <p>Exec Query Again <button id="button6">Run</button><p>
+      <pre class="prettyprint">
+db.collection("test").find({})
+                     .done(cb)</pre>
+      <div id="result6">
+      </div>
+    </div>
+
+    <div>
+      <p>Exec Query with matcher <button id="button7">Run</button><p>
+      <pre class="prettyprint">
+db.collection("test").find({"val":1})
+                     .done(cb)</pre>
+      <div id="result7">
+      </div>
+    </div>
+
+    <div>
+      <p>Exec Query with queryOperator <button id="button8">Run</button><p>
+      <pre class="prettyprint">
+db.collection("test").find({"val":{"$gte":2}})
+                     .done(cb)</pre>
+      <div id="result8">
+      </div>
+    </div>
+
+    <div>
+      <p>Exec Projection <button id="button9">Run</button><p>
+      <pre class="prettyprint">
+db.collection("test").find({},{"_id":0})
+                     .done(cb)</pre>
+      <div id="result9">
+      </div>
+    </div>
+
+    <div>
+      <p>Observed Query <button id="button10">Run</button><p>
+      <pre class="prettyprint">
+db.collection("test").find({"val":{"$gte":8}})
+                     .onValue(observer)</pre>
+      <div id="result10">
+      </div>
+    </div>
+
+    <div>
+      <p>Exec Update <button id="button11">Run</button><p>
+      <pre class="prettyprint">
+db.collection("test").update({name:"test1"},{name:"test1","val":Math.ceil(Math.random()*20)}).onValue(logResultCB("#result11"))
+                     .done(cb)</pre>
+      <div id="result11">
+      </div>
+    </div>
 
 
+    <script type="text/javascript">
 
-          db.collection("test").find({})
-                               .done(Logging("find empty collection"));
-          console.info(db.getCollectionNames());
+      $("button").on("click",function(){
+        var idx = $(this).attr("id").replace("button","");
+        window["run"+idx]();
+      });
 
-          var testCol = db.getCollection("test");
-          testCol.on("updated",function(){
-            console.info("test collection updated");
-          });
+      function logResult(id, result){
+        document.getElementById(id).innerHTML = "<pre>"+JSON.stringify(result)+"</pre>";
+      }
 
-          db.on("error", function(){console.error(arguments)});
+      function logResultCB(id){
+        return function(error, result){
+          $(id).html("<pre>[ERROR]:"+JSON.stringify(error) +"\n[RESULT]:"+JSON.stringify(result)+"</pre>");
+        }
+      }
 
+      var db;
 
-          db.collection("test").save({name:"testdoc1","val":1})
-                               .done(Logging("insert"));
-          db.collection("test").save({name:"testdoc2","val":2})
-                               .done(Logging("insert"));
+      function run1(){
+        db = new Longo.DB("School");
+        db.on("error", function(e){});
+      }
+      run1();
 
-          db.collection("test").find({})
-                               .done(Logging("Find all"));
+      function run2(){
+        var result = db.getCollectionNames();
+        logResult("result2", result);
+      }
 
+      function run3(){
+        db.collection("test").find({}).done(logResultCB("#result3"));
+      }
 
-          db.collection("test").find({},{"_id":0})
-                               .done(Logging("Projection"));
+      function run4(){
+        var result = db.getCollectionNames();
+        logResult("result4", result);
+      }
 
+      function run5(){
+        db.collection("test").save([{name:"test1","val":1},{name:"test2","val":2}]).done(logResultCB("#result5"));
+      }
 
+      function run6(){
+        db.collection("test").find({}).done(logResultCB("#result6"));
+      }
 
-          db.collection("test").find({"val":1})
-                               .done(Logging("Find with query {\"val\":1}"));
+      function run7(){
+        db.collection("test").find({"val":1}).done(logResultCB("#result7"));
+      }
 
+      function run8(){
+        db.collection("test").find({"val":{"$gte":2}}).done(logResultCB("#result8"));
+      }
 
-          db.collection("test").find({"val":{"$gte":2}})
-                               .done(Logging("Find with query {\"val\":{\"$gte\":2}}"));
+      function run9(){
+        db.collection("test").find({},{"_id":0}).done(logResultCB("#result9"));
+      }
 
-          db.collection("test").find({"val":{"$gte":2}})
-                               .onValue(Logging("reactive"));
+      function run10(){
+        db.collection("test").find({"val":{"$gte":8}}).onValue(logResultCB("#result10"));
+      }
 
-          setTimeout(function(){
-            db.collection("test").save({name:"testdoc3","val":5}).done(Logging("insert"));;
-            setTimeout(function(){
-              db.collection("test").update({name:"testdoc1"},{name:"testdoc1","val":15}).done(Logging("update"));
-            },5000);
-          },5000);
-
-
-
-        </script>
-    </body>
+      function run11(){
+        db.collection("test").update({name:"test1"},{name:"test1","val":Math.ceil(Math.random()*20)}).done(logResultCB("#result11"));
+      }
+    </script>
+  </body>
 </html>

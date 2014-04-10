@@ -19,10 +19,10 @@
   };
 
 
-  Longo.LONGOROOT = "/Longo";
+  Longo.LONGOROOT = "/Longo.js";
   Longo.setRoot = function(root){
-    if (root instanceof wnd.Event) {
-      root = "/Longo";
+    if (_.isUndefined(root) || root instanceof wnd.Event) {
+      root = "/Longo.js";
       var scripts = wnd.document.getElementsByTagName("script");
       var i = scripts.length;
       while (i--) {
@@ -61,6 +61,7 @@
   Longo.Error.MOD_ID_NOT_ALLOWED = 10;
   Longo.Error.NOT_SUPPOETRD = 10;
 
+  Longo.ErrorCds = _.invert(Longo.Error);
 
   var Utils = Longo.Utils = {
 
@@ -196,35 +197,48 @@
 
   };
 
+  var EventEmitter;
+  if (!wnd.EventEmitter){
+    // Inner Classes
+    EventEmitter = function() {
+      this.dom = wnd.document.createDocumentFragment();
+    };
+    // https://developer.mozilla.org/en-US/docs/Web/API/EventTarget.addEventListener
+    EventEmitter.prototype.addEventListener = function() {
+      this.dom.addEventListener.apply(this.dom, Longo.Utils.aSlice(arguments));
+    };
+    // https://developer.mozilla.org/en-US/docs/Web/API/EventTarget.removeEventListener
+    EventEmitter.prototype.removeEventListener = function() {
+      this.dom.removeEventListener.apply(this.dom, Longo.Utils.aSlice(arguments));
+    };
+    // https://developer.mozilla.org/en-US/docs/Web/API/EventTarget.dispatchEvent
+    EventEmitter.prototype.dispatchEvent = function() {
+      var args = Longo.Utils.aSlice(arguments),
+        ev = args[0];
+      if (!ev) return;
+      if (ev.constructor.name !== "Event") {
+        var cev = new global.CustomEvent(args[0].toString(), args[1]);
+        cev.data = args.slice(1);
+        args[0] = cev;
+      }
+      this.dom.dispatchEvent.apply(this.dom, args);
+    };
+    // alias
+    EventEmitter.prototype.on = EventEmitter.prototype.addEventListener;
+    EventEmitter.prototype.bind = EventEmitter.prototype.addEventListener;
+    EventEmitter.prototype.off = EventEmitter.prototype.removeEventListener;
+    EventEmitter.prototype.unbind = EventEmitter.prototype.removeEventListener;
+    EventEmitter.prototype.emit = EventEmitter.prototype.dispatchEvent;
+    EventEmitter.prototype.trigger = EventEmitter.prototype.dispatchEvent;
 
-  // Inner Classes
-
-  function EventEmitter() {
-    this.dom = wnd.document.createDocumentFragment();
+    console.warn(["[INFO]:EventEmitter is not imported.",
+                 "Longo use dom based EventEmitter by default.",
+                 "For better performance, please use Wolfy87's EventEmitter implementation.",
+                 "https://github.com/Wolfy87/EventEmitter"].join(" "));
+  } else {
+    EventEmitter = wnd.EventEmitter;
   }
-  // https://developer.mozilla.org/en-US/docs/Web/API/EventTarget.addEventListener
-  EventEmitter.prototype.addEventListener = function() {
-    this.dom.addEventListener.apply(this.dom, Longo.Utils.aSlice(arguments));
-  };
-  // https://developer.mozilla.org/en-US/docs/Web/API/EventTarget.removeEventListener
-  EventEmitter.prototype.removeEventListener = function() {
-    this.dom.removeEventListener.apply(this.dom, Longo.Utils.aSlice(arguments));
-  };
-  // https://developer.mozilla.org/en-US/docs/Web/API/EventTarget.dispatchEvent
-  EventEmitter.prototype.dispatchEvent = function() {
-    var args = Longo.Utils.aSlice(arguments),
-      ev = args[0];
-    if (!ev) return;
-    args[0] = (ev.constructor.name === "Event") ? args[0] : new global.CustomEvent(args[0].toString(), args[1]);
-    this.dom.dispatchEvent.apply(this.dom, args);
-  };
-  // alias
-  EventEmitter.prototype.on = EventEmitter.prototype.addEventListener;
-  EventEmitter.prototype.bind = EventEmitter.prototype.addEventListener;
-  EventEmitter.prototype.off = EventEmitter.prototype.removeEventListener;
-  EventEmitter.prototype.unbind = EventEmitter.prototype.removeEventListener;
-  EventEmitter.prototype.emit = EventEmitter.prototype.dispatchEvent;
-  EventEmitter.prototype.trigger = EventEmitter.prototype.dispatchEvent;
+
 
 
   /**
@@ -345,7 +359,7 @@
         self.db.lastError = response[0];
         self.db.emit("error", response[0]);
         self.emit("error", response[0]);
-        return self.logger.error("ERROR:Failed to parse WebWorker message", response[0]);
+        return self.logger.error("ERROR:Failed to parse WebWorker message", Longo.ErrorCds[response[0]]);
       }
       data   = response[1] || {};
       seq    = data.seq || "-1";
@@ -356,7 +370,7 @@
         self.db.lastError = error;
         self.db.emit("error", error);
         self.emit("error", error);
-        self.logger.error("ERROR:Failed at worker", error);
+        self.logger.error("ERROR:Failed at worker", Longo.ErrorCds[error]);
       }
       if (data.isUpdated){
         _.each(_.values(self.observers), function(ob){
