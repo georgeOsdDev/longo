@@ -1,3 +1,5 @@
+This matrix is not well maintenanced yet.
+
 # Supported [MongoDB Shell Methods](http://docs.mongodb.org/manual/reference/method/)
 Longo does not support Auth, Index, Sharding, etc.
 
@@ -12,18 +14,18 @@ Longo does not support Auth, Index, Sharding, etc.
 |db.cloneDatabase            | no        | -           |
 |db.commandHelp              | no        | -           |
 |db.copyDatabase             | no        | -           |
-|db.createCollection         | yes       | no          |
-|db.currentOp                | yes       | no          |
-|db.dropDatabase             | yes       | no          |
+|db.createCollection         | yes       | yes         |
+|db.currentOp                | yes       | yes         |
+|db.dropDatabase             | yes       | yes         |
 |db.eval                     | no        | -           |
 |db.fsyncLock                | no        | -           |
 |db.fsyncUnlock              | no        | -           |
-|db.getCollection            | yes       | no          |
-|db.getCollectionNames       | yes       | no          |
-|db.getLastError             | yes       | no          |
+|db.getCollection            | yes       | yes         |
+|db.getCollectionNames       | yes       | yes         |
+|db.getLastError             | yes       | yes         |
 |db.getLastErrorObj          | no        | -           |
 |db.getMongo                 | no        | -           |
-|db.getName                  | yes       | no          |
+|db.getName                  | yes       | yes         |
 |db.getPrevError             | no        | -           |
 |db.getProfilingLevel        | no        | -           |
 |db.getProfilingStatus       | no        | -           |
@@ -32,7 +34,7 @@ Longo does not support Auth, Index, Sharding, etc.
 |db.help                     | no        | -           |
 |db.hostInfo                 | no        | -           |
 |db.isMaster                 | no        | -           |
-|db.killOp                   | yes       | no          |
+|db.killOp                   | yes       | yes         |
 |db.listCommands             | no        | -           |
 |db.loadServerScripts        | no        | -           |
 |db.logout                   | no        | -           |
@@ -121,31 +123,11 @@ Longo does not support Auth, Index, Sharding, etc.
 |cursor.sort           | yes       | no          |
 |cursor.toArray        | yes       | no          |
 
+| Original APIs                    | inpremented |
+|----------------------------------|:-----------:|
+|cursor.onValue                    | yes         |
 
 
+##Query operators
 
-$gt
-$gte
-$in
-$lt
-$lte
-$ne
-$nin
-
-Logical
-$or
-$and
-$not
-$nor
-
-$exists
-$type
-
-$mod
-$regex
-$text
-$where
-
-$all
-$elemMatch
-$size
+Query operators are depended on [underscore-query](https://github.com/davidgtonge/underscore-query#query-api).

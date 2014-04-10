@@ -11,7 +11,7 @@
       <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
       <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js"></script>
       <script src="./EventEmitter.min.js"></script>
-      <script src="../longo.js"></script>
+      <script src="../dest/longo.min.js"></script>
   </head>
   <body>
     <a href="http://www.reactivemanifesto.org/"> <img style="border: 0; position: fixed; right: 0; top:0; z-index: 9000" src="//d379ifj7s9wntv.cloudfront.net/reactivemanifesto/images/ribbons/we-are-reactive-red-right.png"> </a>
@@ -55,6 +55,9 @@ db.getCollectionNames();</pre>
 db.collection("test").save([
                             {name:"test1","val":1},
                             {name:"test2","val":2}
+                            {name:"test3","val":3}
+                            {name:"test4","val":4}
+                            {name:"test5","val":5}
                     ]).done(cb);</pre>
       <div id="result5">
       </div>
@@ -81,7 +84,7 @@ db.collection("test").find({"val":1})
     <div>
       <p>Exec Query with queryOperator <button id="button8">Run</button><p>
       <pre class="prettyprint">
-db.collection("test").find({"val":{"$gte":2}})
+db.collection("test").find({"val":{"$gte":3}})
                      .done(cb)</pre>
       <div id="result8">
       </div>
@@ -91,6 +94,7 @@ db.collection("test").find({"val":{"$gte":2}})
       <p>Exec Projection <button id="button9">Run</button><p>
       <pre class="prettyprint">
 db.collection("test").find({},{"_id":0})
+                     .limit(4)
                      .done(cb)</pre>
       <div id="result9">
       </div>
@@ -108,9 +112,18 @@ db.collection("test").find({"val":{"$gte":8}})
     <div>
       <p>Exec Update <button id="button11">Run</button><p>
       <pre class="prettyprint">
-db.collection("test").update({name:"test1"},{name:"test1","val":Math.ceil(Math.random()*20)}).onValue(logResultCB("#result11"))
+db.collection("test").update({name:"test1"},{name:"test1","val":Math.ceil(Math.random()*20)})
                      .done(cb)</pre>
       <div id="result11">
+      </div>
+    </div>
+
+    <div>
+      <p>Exec Remove <button id="button12">Run</button><p>
+      <pre class="prettyprint">
+db.collection("test").remove({value:{"$lte": 8}}).done(ogResultCB("#result12"))
+                     .done(cb)</pre>
+      <div id="result12">
       </div>
     </div>
 
@@ -155,7 +168,14 @@ db.collection("test").update({name:"test1"},{name:"test1","val":Math.ceil(Math.r
       }
 
       function run5(){
-        db.collection("test").save([{name:"test1","val":1},{name:"test2","val":2}]).done(logResultCB("#result5"));
+        db.collection("test").save([
+                                {name:"test1","val":1},
+                                {name:"test2","val":2},
+                                {name:"test3","val":3},
+                                {name:"test4","val":4},
+                                {name:"test5","val":5}
+                                ])
+                             .done(logResultCB("#result5"));
       }
 
       function run6(){
@@ -167,11 +187,11 @@ db.collection("test").update({name:"test1"},{name:"test1","val":Math.ceil(Math.r
       }
 
       function run8(){
-        db.collection("test").find({"val":{"$gte":2}}).done(logResultCB("#result8"));
+        db.collection("test").find({"val":{"$gte":3}}).done(logResultCB("#result8"));
       }
 
       function run9(){
-        db.collection("test").find({},{"_id":0}).done(logResultCB("#result9"));
+        db.collection("test").find({},{"_id":0}).limit(4).done(logResultCB("#result9"));
       }
 
       function run10(){
@@ -181,6 +201,11 @@ db.collection("test").update({name:"test1"},{name:"test1","val":Math.ceil(Math.r
       function run11(){
         db.collection("test").update({name:"test1"},{name:"test1","val":Math.ceil(Math.random()*20)}).done(logResultCB("#result11"));
       }
+
+      function run12(){
+        db.collection("test").remove({"name":"test1"}).done(logResultCB("#result12"));
+      }
+
     </script>
   </body>
 </html>
