@@ -69,7 +69,7 @@ Create collection and save document.
 								  {"name":"tiger",  count:5,  "food":["chicken", "water"]},
 								  {"name":"monkey", count:15, "food":["apple", "banana", "water"]}
 								])
-							 	.done(function(error, result){
+							 	.done(function(error){
 							 		if(error) return console.log("fail to save", error);
 							 		console.log("tiger saved");
 							  });
@@ -85,9 +85,40 @@ Search document from collection.
 							 		console.log(result);
 							 	});
 
+
+Observe document.
+
+	db.collection("animals").insert({"name":rabit, count:10});
+
+	var rabitCounter = db.collection("animal")
+									  .find({"name":"rabit"}, {"_id":0, "count":1});
+									  .onValue(function(error, result){
+									  	if(error) return console.log(error);
+									  	console.log("There are" + result[0] + "rabits.");
+									  });
+
+	// There are 10 rabits!
+
+	db.collection("animals").update({"name":"rabit"}, {"name":rabit, count:20}).done();
+
+	// There are 20 rabits!
+
+	DB.killOp(rabitCounter);
+
+	db.collection("animals").update({"name":"rabit"}, {"name":rabit, count:15}).done();
+
+	// nothing happen
+
+
+
+
 For more detail : See [Api Reference](http://path.to.documents).
 
 ### Query Operators
+
+Longo use [underscore-query](https://github.com/davidgtonge/underscore-query) for query operation.
+It is similer to mongoShell API.
+You can use it's query for `find`, `update`, and `$match` in `aggregation` pipeline.
 
 ### Aggregation Operators
 

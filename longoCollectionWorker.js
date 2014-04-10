@@ -20,6 +20,7 @@ self.dataset = [];
 self.option  = {
   capped:false,
 };
+self.isUpdatedBySeq = {};
 var SKIP_REST = "SKIP_REST";
 
 function objectId(val){
@@ -42,11 +43,12 @@ function toDocument(doc) {
   return _.object(keys, arr);
 }
 
-function doStart(command){
+function doStart(command, seq){
   "use strict";
   self.option = command.option;
   self.dataset = command.dataset;
-  return[null, []];
+  self.isUpdatedBySeq[seq] = true;
+  return [null, []];
 }
 
 function doFind(dataset, query){
@@ -54,7 +56,7 @@ function doFind(dataset, query){
   return [null, _.query(dataset, query)];
 }
 
-function doInsert(docs) {
+function doInsert(docs, seq) {
   "use strict";
   if (Utils.isZero(_.size(docs))){
     return [SKIP_REST, null];
@@ -67,40 +69,42 @@ function doInsert(docs) {
     if (_.where(self.dataset, {"_id":doc._id}).length > 0) return [Longo.Error.DUPLICATE_KEY_ERROR, doc];
   }
   self.dataset.push(doc);
-  return doInsert(_.rest(docs));
+  self.isUpdatedBySeq[seq] = true;
+  return doInsert(_.rest(docs), seq);
 }
 
-function updateById(id, doc) {
+function updateById(id, doc, seq) {
   "use strict";
   doc = toDocument(doc);
   if (doc._id) return [Longo.Error.MOD_ID_NOT_ALLOWED, null];
   doc._id = id;
   self.dataset = _.reject(self.dataset, function(d){return d._id === id;}).concat([doc]);
+  self.isUpdatedBySeq[seq] = true;
   return [null, null];
 }
 
-function doUpdate(query, update, option) {
+function doUpdate(query, update, option, seq) {
   "use strict";
   var hits, current;
   hits = doFind(self.dataset, query)[1];
 
   if (Utils.isZero(_.size(hits))) {
-    if (option.upsert) return doInsert(Utils.toArray(update));
+    if (option.upsert) return doInsert(Utils.toArray(update), seq);
     return [Longo.Error.DOCUMENT_NOT_FOUND, null];
   } else if (Utils.isOne(_.size(hits))) {
     current = hits[0];
-    return updateById(current._id, update);
+    return updateById(current._id, update, seq);
   } else {
     if (!option.multi) hits = _.first(hits);
     if (update._id) return [Longo.Error.MOD_ID_NOT_ALLOWED, null];
     _.each(hits, function(current){
-      updateById(current._id, update);
+      updateById(current._id, update, seq);
     });
     return [null, null];
   }
 }
 
-function doSave(docs){
+function doSave(docs, seq){
   "use strict";
   var doc, result;
   if (Utils.isZero(_.size(docs))){
@@ -109,13 +113,13 @@ function doSave(docs){
   doc = _.first(docs);
 
   if (!doc._id) {
-    result = doInsert(Utils.toArray(doc));
+    result = doInsert(Utils.toArray(doc), seq);
     if (result[0]/*error*/) return result;
   } else {
-    result = doUpdate({"_id": doc._id}, doc, {upsert:true});
+    result = doUpdate({"_id": doc._id}, doc, {upsert:true}, seq);
     if (result[0]/*error*/) return result;
   }
-  return doSave(_.rest(docs));
+  return doSave(_.rest(docs), seq);
 }
 
 /**
@@ -155,6 +159,33 @@ function doProject(dataset, projection){
   }
 }
 
+function bindSeqCommand(seq){
+  "use strict";
+  return function(memo, command){
+    var error   = memo[0],
+        dataset = memo[1]
+        ;
+
+    if (error) return memo;
+
+    switch(command.cmd) {
+    case "start":
+      return doStart(command,seq);
+    case "find":
+      return doFind(dataset, toQuery(command.criteria));
+    case "insert":
+      return doInsert(Utils.toArray(Utils.getOrElse(command.doc),[]), seq);
+    case "save":
+      return doSave(Utils.toArray(command.doc), seq);
+    case "update":
+      return doUpdate(toQuery(command.criteria), Utils.getOrElse(command.update, {}), Utils.getOrElse(command.option, {}), seq);
+    case "project":
+      return doProject(dataset, Utils.getOrElse(command.projection,{}));
+    default :
+      return memo;
+    }
+  };
+}
 
 
 // self is WebWorker's global context
@@ -167,35 +198,35 @@ self.send = function(message) {
   self.postMessage(bytes, [bytes.buffer]);
 };
 
-self.doCommand = function(memo, command) {
-  "use strict";
-  var error   = memo[0],
-      dataset = memo[1]
-      ;
+// self.doCommand = function(memo, command) {
+//   "use strict";
+//   var error   = memo[0],
+//       dataset = memo[1]
+//       ;
 
-  if (error) return memo;
+//   if (error) return memo;
 
-  switch(command.cmd) {
-  case "start":
-    return doStart(command);
-  case "find":
-    return doFind(dataset, toQuery(command.criteria));
-  case "insert":
-    return doInsert(Utils.toArray(Utils.getOrElse(command.doc),[]));
-  case "save":
-    return doSave(Utils.toArray(command.doc));
-  case "update":
-    return doUpdate(toQuery(command.criteria), Utils.getOrElse(command.update, {}), Utils.getOrElse(command.option, {}));
-  case "project":
-    return doProject(dataset, Utils.getOrElse(command.projection,{}));
-  default :
-    return memo;
-  }
-};
+//   switch(command.cmd) {
+//   case "start":
+//     return doStart(command);
+//   case "find":
+//     return doFind(dataset, toQuery(command.criteria));
+//   case "insert":
+//     return doInsert(Utils.toArray(Utils.getOrElse(command.doc),[]));
+//   case "save":
+//     return doSave(Utils.toArray(command.doc));
+//   case "update":
+//     return doUpdate(toQuery(command.criteria), Utils.getOrElse(command.update, {}), Utils.getOrElse(command.option, {}));
+//   case "project":
+//     return doProject(dataset, Utils.getOrElse(command.projection,{}));
+//   default :
+//     return memo;
+//   }
+// };
 
 self.addEventListener("message", function(e) {
   "use strict";
-  var request, data, cmds, seq, result = [];
+  var request, data, cmds, seq, result = [], executer;
   request = Utils.tryParseJSON(Utils.ab2str(e.data));
 
   if (request[0]) return self.send({"seq":-1, "error": request[0], "result": []});
@@ -203,11 +234,13 @@ self.addEventListener("message", function(e) {
   data = request[1] || {};
   cmds = data.cmds;
   seq  = data.seq;
+  self.isUpdatedBySeq[seq] = false;
+  executer = bindSeqCommand(seq);
 
-  result = _.reduce(cmds, self.doCommand, [null, self.dataset]);
+  result = _.reduce(cmds, executer, [null, self.dataset]);
 
   if (result[0] === SKIP_REST ) result[0] = null;
 
-  self.send({"seq": seq, "error": result[0] , "result": result[1]});
+  self.send({"seq": seq, "error": result[0] , "result": result[1], "isUpdated":self.isUpdatedBySeq[seq]});
 
 }, false);

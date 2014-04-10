@@ -58,6 +58,7 @@
   Longo.Error.DUPLICATE_KEY_ERROR = 8;
   Longo.Error.DOCUMENT_NOT_FOUND = 9;
   Longo.Error.MOD_ID_NOT_ALLOWED = 10;
+  Longo.Error.NOT_SUPPOETRD = 10;
 
 
   var Utils = Longo.Utils = {
@@ -285,7 +286,10 @@
   // killOp is not kill operation but just delete callback
   DB.prototype.killOp = function(opId) {
     var tokens = opId.split[":"];
-    if (this.collections[tokens[0]]) delete this.collections[tokens[0]].cbs[[1]];
+    if (this.collections[tokens[0]]) {
+      delete this.collections[tokens[0]].cbs[[1]];
+      delete this.collections[tokens[0]].observers[[1]];
+    }
   };
 
 
@@ -309,6 +313,7 @@
         error);
       }
     };
+    this.observers = {};
 
     var worker = this.worker = new Worker(Longo.LONGOROOT + "/longoCollectionWorker.js");
 
@@ -334,9 +339,9 @@
         self.emit("error", response[0]);
         return self.logger.error("ERROR:Failed to parse WebWorker message", response[0]);
       }
-      data = response[1] || {};
-      seq  = data.seq || "-1";
-      error = data.error || null;
+      data   = response[1] || {};
+      seq    = data.seq || "-1";
+      error  = data.error || null;
       result = data.result;
 
       if (error) {
@@ -345,6 +350,13 @@
         self.emit("error", error);
         self.logger.error("ERROR:Failed at worker", error);
       }
+      if (data.isUpdated){
+        _.each(_.values(self.observers), function(ob){
+          console.log(ob);
+          self.send(ob.message, ob.func, false);
+        });
+      }
+
       return Utils.doWhen(_.isFunction(self.cbs[seq]), self.cbs[seq], [error, result]);
     };
   };
@@ -387,14 +399,14 @@
     return seq+"";
   };
 
-  Collection.prototype.send = function(message, cb) {
+  Collection.prototype.send = function(message, cb, observe) {
     var seq, callbackFunc, json, bytes;
     callbackFunc = Utils.checkOrElse(cb, Utils.noop, _.isFunction);
 
     if (this.status !== Status.STARTED) return callbackFunc(Longo.Error.COLLECTION_IS_NOT_STARTED, null);
 
     seq = this.getNextSeq();
-    this.cbs[seq] = cb;
+    this.cbs[seq] = callbackFunc;
     message.seq = seq;
     json = JSON.stringify(message);
 
@@ -402,6 +414,14 @@
     // http://updates.html5rocks.com/2011/12/Transferable-Objects-Lightning-Fast
     bytes = Utils.str2ab(json);
     this.worker.postMessage(bytes, [bytes.buffer]);
+
+    if (observe){
+      this.observers[seq] = {
+        "message":message,
+        "func":callbackFunc,
+      };
+    }
+
     return this.name + ":" + seq;
   };
 
@@ -541,8 +561,9 @@
   Collection.prototype.group = function() {};
   Collection.prototype.mapReduce = function() {};
   Collection.prototype.renameCollection = function(name) {
+    this.db.collections[name] = this;
+    delete this.db.collections[this.name];
     this.name = name;
-    this.db.collections[name]
     this.logger = Utils.createLogger("Longo." + this.db.name + "." + this.name);
   };
 
@@ -563,8 +584,13 @@
     }
   };
 
-  Cursor.prototype.done = function(userCallback) {
-    var self, message, callback;
+  // for callback style
+  Cursor.prototype.done = function(cb) {
+    var self,
+        message,
+        callback,
+        userCallback = Utils.checkOrElse(cb, Utils.noop, _.isFunction)
+        ;
     self = this;
     message = {
       "cmds": this.cmds
@@ -578,9 +604,47 @@
     return this.collection.send(message, callback);
   };
 
-  Cursor.prototype.wrap = function(cb) {
-    return new Cursor(this, {}, cb);
+  // for reactive style
+  Cursor.prototype.onValue = function(cb, skipDuplicates) {
+
+    if (_.some([
+      _.contains(_.keys(this.cmds), "save"),
+      _.contains(_.keys(this.cmds), "insert"),
+      _.contains(_.keys(this.cmds), "remove"),
+      _.contains(_.keys(this.cmds), "update"),
+      _.contains(_.keys(this.cmds), "drop")
+    ])){
+      this.collection.logger.log("WARN:`onValue` is not supported for 'save','insert','remove','update','drop'. call `done` instead.");
+      return this.done(cb);
+    }
+
+    var self,
+        message,
+        callback,
+        userCallback = Utils.checkOrElse(cb, Utils.noop, _.isFunction)
+        ;
+    self = this;
+    message = {
+      "cmds": this.cmds
+    };
+
+    callback = (function() {
+      var cache = null;
+      return function(){
+        var args = Utils.aSlice(arguments);
+        _.invoke(self.wrapCb, "call");
+        if(!skipDuplicates || !_.isEqual(cache, args)){
+          userCallback.apply(null, args);
+        }
+      };
+    })();
+
+    return this.collection.send(message, callback, true);
   };
+
+  // Cursor.prototype.wrap = function(cb) {
+  //   return new Cursor(this, {}, cb);
+  // };
 
   Cursor.prototype.count = function() {
     var cmd = {
