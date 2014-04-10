@@ -22,10 +22,15 @@ self.option  = {
 };
 self.isUpdatedBySeq = {};
 var SKIP_REST = "SKIP_REST";
+var chars     = "abcdefghijklmnopqrstuvwxyz0123456789".split("");
 
+/*
+ * return random string length 24
+ * first 13 char is timestamp
+ */
 function objectId(val){
   "use strict";
-  return val || Date.now();
+  return val || Date.now() + _.shuffle(chars).join("").substr(0, 11);
 }
 
 function toQuery(criteria) {
@@ -95,7 +100,7 @@ function doUpdate(query, update, option, seq) {
     current = hits[0];
     return updateById(current._id, update, seq);
   } else {
-    if (!option.multi) hits = _.first(hits);
+    if (!option.multi) hits = [_.first(hits)];
     if (update._id) return [Longo.Error.MOD_ID_NOT_ALLOWED, null];
     _.each(hits, function(current){
       updateById(current._id, update, seq);
@@ -159,7 +164,7 @@ function doProject(dataset, projection){
   }
 }
 
-function bindSeqCommand(seq){
+function getExecuter(seq){
   "use strict";
   return function(memo, command){
     var error   = memo[0],
@@ -198,32 +203,6 @@ self.send = function(message) {
   self.postMessage(bytes, [bytes.buffer]);
 };
 
-// self.doCommand = function(memo, command) {
-//   "use strict";
-//   var error   = memo[0],
-//       dataset = memo[1]
-//       ;
-
-//   if (error) return memo;
-
-//   switch(command.cmd) {
-//   case "start":
-//     return doStart(command);
-//   case "find":
-//     return doFind(dataset, toQuery(command.criteria));
-//   case "insert":
-//     return doInsert(Utils.toArray(Utils.getOrElse(command.doc),[]));
-//   case "save":
-//     return doSave(Utils.toArray(command.doc));
-//   case "update":
-//     return doUpdate(toQuery(command.criteria), Utils.getOrElse(command.update, {}), Utils.getOrElse(command.option, {}));
-//   case "project":
-//     return doProject(dataset, Utils.getOrElse(command.projection,{}));
-//   default :
-//     return memo;
-//   }
-// };
-
 self.addEventListener("message", function(e) {
   "use strict";
   var request, data, cmds, seq, result = [], executer;
@@ -235,7 +214,7 @@ self.addEventListener("message", function(e) {
   cmds = data.cmds;
   seq  = data.seq;
   self.isUpdatedBySeq[seq] = false;
-  executer = bindSeqCommand(seq);
+  executer = getExecuter(seq);
 
   result = _.reduce(cmds, executer, [null, self.dataset]);
 

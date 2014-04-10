@@ -15,27 +15,33 @@
 
           function Logging(msg){
             return function(err, result){
-              console.log(msg+"-------------->");
-              console.log("[error]:",err);
-              console.log("[result]:",result);
-              console.log("<-------------");
+              console.info(msg+"-------------->");
+              console.info("[error]:",err);
+              console.info("[result]:",result);
+              console.info(" ");
             };
           };
 
-          var logResponse =
-
-
           Longo.setRoot("../")
           var db = new Longo.DB("School");
-          console.log(db.getCollectionNames());
+          db.on("error", function(){console.error(arguments)});
+          console.info(db.getCollectionNames());
 
 
 
           db.collection("test").find({})
                                .done(Logging("find empty collection"));
-          console.log(db.getCollectionNames());
+          console.info(db.getCollectionNames());
 
-          db.collection("test").save({name:"testdoc","val":1})
+          var testCol = db.getCollection("test");
+          testCol.on("updated",function(){
+            console.info("test collection updated");
+          });
+
+          db.on("error", function(){console.error(arguments)});
+
+
+          db.collection("test").save({name:"testdoc1","val":1})
                                .done(Logging("insert"));
           db.collection("test").save({name:"testdoc2","val":2})
                                .done(Logging("insert"));
@@ -57,7 +63,15 @@
                                .done(Logging("Find with query {\"val\":{\"$gte\":2}}"));
 
           db.collection("test").find({"val":{"$gte":2}})
-                               .onValue(Logging("Find with query {\"val\":{\"$gte\":2}}"));
+                               .onValue(Logging("reactive"));
+
+          setTimeout(function(){
+            db.collection("test").save({name:"testdoc3","val":5}).done(Logging("insert"));;
+            setTimeout(function(){
+              db.collection("test").update({name:"testdoc1"},{name:"testdoc1","val":15}).done(Logging("update"));
+            },5000);
+          },5000);
+
 
 
         </script>

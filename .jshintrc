@@ -20,6 +20,7 @@
     "smarttabs": true,
     "jquery": false,
     "globals"   : {
+        "Event"      : false,
         "console"    : false,
         "describe"   : false,
         "it"         : false,

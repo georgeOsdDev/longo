@@ -19,8 +19,9 @@
   };
 
 
+  Longo.LONGOROOT = "/Longo";
   Longo.setRoot = function(root){
-    if (!root) {
+    if (root instanceof wnd.Event) {
       root = "/Longo";
       var scripts = wnd.document.getElementsByTagName("script");
       var i = scripts.length;
@@ -34,7 +35,7 @@
     }
     Longo.LONGOROOT = root;
   };
-  wnd.addEventListener("load", Longo.setRoot);
+  wnd.addEventListener("load", Longo.setRoot, false);
 
   var Status = Longo.Status = {
     "CREATED": 0,
@@ -68,12 +69,12 @@
     // messageing(http://www.html5rocks.com/en/tutorials/webgl/typed_arrays/#toc-transferables)
     // http://updates.html5rocks.com/2012/06/How-to-convert-ArrayBuffer-to-and-from-String
     ab2str: function(buf) {
-      return String.fromCharCode.apply(null, new Uint16Array(buf));
+      return String.fromCharCode.apply(null, new global.Uint16Array(buf));
     },
 
     str2ab: function(str) {
-      var buf = new ArrayBuffer(str.length * 2); // 2 bytes for each char
-      var bufView = new Uint16Array(buf);
+      var buf = new global.ArrayBuffer(str.length * 2); // 2 bytes for each char
+      var bufView = new global.Uint16Array(buf);
       for (var i = 0, strLen = str.length; i < strLen; i++) {
         bufView[i] = str.charCodeAt(i);
       }
@@ -97,12 +98,12 @@
         log: function() {},
         error: function() {}
       };
-      if (!console) return _logger;
+      if (!wnd.console) return _logger;
       _logger.log = (function() {
-        console.log.bind(console, prefix);
+        return wnd.console.log.bind(wnd.console, prefix);
       })();
       _logger.error = (function() {
-        console.error.bind(console, prefix);
+        return wnd.console.error.bind(wnd.console, prefix);
       })();
       return _logger;
     },
@@ -187,14 +188,19 @@
         ret[0] = new Longo.Error(Error.PARSE_ERROR, "Failed to parse: " + str, e.stack);
       }
       return ret;
+    },
+
+    dataFromId: function(id){
+      return new Date(Number(id.substr(0,13)));
     }
+
   };
 
 
   // Inner Classes
 
   function EventEmitter() {
-    this.dom = window.document.createDocumentFragment();
+    this.dom = wnd.document.createDocumentFragment();
   }
   // https://developer.mozilla.org/en-US/docs/Web/API/EventTarget.addEventListener
   EventEmitter.prototype.addEventListener = function() {
@@ -209,7 +215,7 @@
     var args = Longo.Utils.aSlice(arguments),
       ev = args[0];
     if (!ev) return;
-    args[0] = (ev.constructor.name === "Event") ? args[0] : new CustomEvent(args[0].toString(), args[1]);
+    args[0] = (ev.constructor.name === "Event") ? args[0] : new global.CustomEvent(args[0].toString(), args[1]);
     this.dom.dispatchEvent.apply(this.dom, args);
   };
   // alias
@@ -229,12 +235,13 @@
    * @classdesc Database constructor
    */
   var DB = Longo.DB = function(name) {
+    EventEmitter.call(this);
     this.name = name;
     this.lastError = null;
     this.collections = {};
     this.logger = Longo.Utils.createLogger("Longo." + name);
   };
-  Longo.Utils.inherits(Longo, EventEmitter);
+  Longo.Utils.inherits(DB, EventEmitter);
 
   DB.prototype.getCollectionNames = function() {
     return _.keys(this.collections);
@@ -294,6 +301,7 @@
 
 
   function Collection(name, opt, db) {
+    EventEmitter.call(this);
     var self = this;
     this.name = name;
     this.option = {
@@ -346,18 +354,18 @@
 
       if (error) {
         self.db.lastError = error;
-        self.db.emmit("error", error);
+        self.db.emit("error", error);
         self.emit("error", error);
         self.logger.error("ERROR:Failed at worker", error);
       }
       if (data.isUpdated){
         _.each(_.values(self.observers), function(ob){
-          console.log(ob);
           self.send(ob.message, ob.func, false);
         });
       }
 
-      return Utils.doWhen(_.isFunction(self.cbs[seq]), self.cbs[seq], [error, result]);
+      Utils.doWhen(_.isFunction(self.cbs[seq]), self.cbs[seq], [error, result]);
+      if (data.isUpdated) self.emit("updated", error);
     };
   };
 
@@ -425,18 +433,6 @@
     return this.name + ":" + seq;
   };
 
-
-  // Collection.prototype.findAll = function(projection) {
-  //   var cmds = [{
-  //     "cmd": "find",
-  //     "criteria": {}
-  //   }, {
-  //     "cmd": "project",
-  //     "projection": projection
-  //   }];
-  //   return new Cursor(this, cmds);
-  // };
-
   Collection.prototype.find = function(criteria, projection) {
     var cmds = [{
       "cmd": "find",
@@ -461,7 +457,6 @@
     }];
     return new Cursor(this, cmds);
   };
-
 
   Collection.prototype.aggregate = function(pipeline) {
     var key,
@@ -529,17 +524,12 @@
     return new Cursor(this, cmd);
   };
 
-
   Collection.prototype.drop = function() {
-    var self = this,
-      wrapCb = function() {
-        delete self.db.collections[self.name];
-      },
-      cmd = {
-        "cmd": "drop"
-      };
-
-    return (new Cursor(this, cmd, wrapCb));
+    this.emit("drop");
+    this.worker.terminate();
+    this.cbs = {};
+    this.observers = {};
+    delete this.db.collections[this.name];
   };
 
   Collection.prototype.count = function() {
@@ -633,7 +623,9 @@
       return function(){
         var args = Utils.aSlice(arguments);
         _.invoke(self.wrapCb, "call");
-        if(!skipDuplicates || !_.isEqual(cache, args)){
+        var hash = JSON.stringify(args[1]);
+        if(!skipDuplicates || !_.isEqual(cache, hash)){
+          cache = hash;
           userCallback.apply(null, args);
         }
       };
