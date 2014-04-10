@@ -6,7 +6,9 @@
  * Copyright (c) 2014 Takeharu Oshida <georgeosddev@gmail.com>
  */
 
+// for jshint
 /* global self:false, Longo:false */
+
 
 // import utilities
 importScripts("./lib/underscore/underscore.js",
@@ -163,6 +165,11 @@ function doProject(dataset, projection){
   }
 }
 
+function doLimit(dataset, limit){
+  "use strict";
+  return _.first(dataset, limit);
+}
+
 function getExecuter(seq){
   "use strict";
   return function(memo, command){
@@ -185,6 +192,8 @@ function getExecuter(seq){
       return doUpdate(toQuery(command.criteria), Utils.getOrElse(command.update, {}), Utils.getOrElse(command.option, {}), seq);
     case "project":
       return doProject(dataset, Utils.getOrElse(command.projection,{}));
+    case "limit":
+      return doLimit(dataset, Utils.getOrElse(command.limit, 15));
     default :
       return memo;
     }

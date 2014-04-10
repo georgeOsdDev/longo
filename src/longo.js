@@ -20,6 +20,7 @@
 
 
   Longo.LONGOROOT = "/Longo.js";
+  Longo.WORKERJS  = "longoWorker.js";
   Longo.setRoot = function(root){
     if (_.isUndefined(root) || root instanceof wnd.Event) {
       root = "/Longo.js";
@@ -29,6 +30,7 @@
         var match = scripts[i].src.match(/(^|.*)\/longo(\.min){0,}\.js$/);
         if (match) {
           root = match[1];
+          if(match[2]) Longo.WORKERJS = "longoWorker.min.js";
           break;
         }
       }
@@ -337,7 +339,7 @@
     };
     this.observers = {};
 
-    var worker = this.worker = new Worker(Longo.LONGOROOT + "/longoCollectionWorker.js");
+    var worker = this.worker = new Worker(Longo.LONGOROOT + "/" + Longo.WORKERJS);
 
     worker.addEventListener("message", this.onMessage(), false);
     worker.addEventListener("error", this.onError(), false);
