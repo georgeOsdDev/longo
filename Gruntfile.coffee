@@ -76,7 +76,20 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks 'grunt-jsdoc'
   grunt.loadNpmTasks 'grunt-mocha-phantomjs'
 
-  grunt.registerTask 'build', ['clean', 'jshint', 'uglify', 'copy', 'mocha_phantomjs', 'jsdoc'];
+  grunt.registerTask 'replace', 'replace longo.js to longo.min.js in longoWorker.min.js', ->
+    done = @.async()
+    { exec } = require 'child_process'
+    fs = require 'fs'
+    fs.readFile 'dest/longoWorker.min.js', 'utf8', (err,data)->
+      if err
+        grunt.warn(err)
+        return done()
+      result = data.replace './longo.js', './longo.min.js'
+      fs.writeFileSync 'dest/longoWorker.min.js', result, 'utf-8'
+      grunt.log.ok("Succeeded in replacing './longo.js' with './longo.min.js'")
+      done()
+
+  grunt.registerTask 'build', ['clean', 'jshint', 'uglify', 'replace', 'copy','mocha_phantomjs', 'jsdoc'];
 
   grunt.registerTask 'default', 'Log some stuff.', ->
     grunt.log.write("""

@@ -11,7 +11,7 @@
 
 
 // import utilities
-importScripts("./lib/underscore/underscore.js",
+importScripts("./lib/underscore/underscore-min.js",
               "./lib/underscore-query/lib/underscore-query.min.js",
               "./longo.js");
 
