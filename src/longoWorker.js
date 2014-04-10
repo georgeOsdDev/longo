@@ -128,6 +128,23 @@ function doSave(docs, seq){
   return doSave(_.rest(docs), seq);
 }
 
+function doRemove(query, justOne, seq){
+  "use strict";
+  var hits = doFind(self.dataset, query)[1],
+      ids;
+
+  if (Utils.isZero(_.size(hits))) return [Longo.Error.DOCUMENT_NOT_FOUND, null];
+
+  if (justOne){
+    self.dataset = _.reject(self.dataset, function(doc){ return doc._id === hits[0]._id;});
+  } else {
+    ids = _.pluck(hits, "_id");
+    self.dataset = _.reject(self.dataset, function(doc){ return _.contains(ids, doc._id);});
+  }
+  self.isUpdatedBySeq[seq] = true;
+  return [null, null];
+}
+
 /**
  * http://docs.mongodb.org/manual/reference/method/db.collection.find/#definition
  *
@@ -167,7 +184,7 @@ function doProject(dataset, projection){
 
 function doLimit(dataset, limit){
   "use strict";
-  return _.first(dataset, limit);
+  return [null, _.first(dataset, limit)];
 }
 
 function getExecuter(seq){
@@ -190,10 +207,12 @@ function getExecuter(seq){
       return doSave(Utils.toArray(command.doc), seq);
     case "update":
       return doUpdate(toQuery(command.criteria), Utils.getOrElse(command.update, {}), Utils.getOrElse(command.option, {}), seq);
+    case "remove":
+      return doRemove(toQuery(command.criteria), Utils.getOrElse(command.justOne, false), seq);
     case "project":
       return doProject(dataset, Utils.getOrElse(command.projection,{}));
     case "limit":
-      return doLimit(dataset, Utils.getOrElse(command.limit, 15));
+      return doLimit(dataset, Utils.getOrElse(command.value, 15));
     default :
       return memo;
     }

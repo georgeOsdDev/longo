@@ -90,6 +90,7 @@ module.exports = (grunt) ->
       done()
 
   grunt.registerTask 'build', ['clean', 'jshint', 'uglify', 'replace', 'copy','mocha_phantomjs', 'jsdoc'];
+  grunt.registerTask 'compile', ['clean', 'jshint', 'uglify', 'replace', 'copy'];
 
   grunt.registerTask 'default', 'Log some stuff.', ->
     grunt.log.write("""
