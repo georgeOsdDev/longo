@@ -20,59 +20,7 @@ self.dataset = [];
 self.option  = {
   capped:false,
 };
-
 var SKIP_REST = "SKIP_REST";
-
-// var operator = {
-
-//   $gt: function(a, b) {
-//         return b < a;
-//       },
-//   $gte: function(a, b) {
-//         return b <= a;
-//       },
-//   $in: function(a, b) {
-//         return _.contains(Utils.toArray(b), a);
-//       }
-//   $lt: function(a, b) {
-//         return a < b;
-//       },
-//   $lte: function(a, b) {
-//         return a <= b;
-//       },
-//   $ne: function(a, b) {
-//         return a != b;
-//       },
-
-//   $nin: function(a, b) {
-//         return !_.contains(Utils.toArray(b), a);
-//       },
-
-//   $or: function(list){
-//         _.map(list, query);
-//         _.some(a);
-//       },
-//   $and: function(list){
-//         _.every(a);
-//       }
-//   $not: function(expression){
-//           return !expression;
-//         }
-//   $nor: function()
-
-//   $exists
-//   $type
-
-//   $mod
-//   $regex
-//   $text
-//   $where
-
-//   $all
-//   $elemMatch
-//   $size
-
-// }
 
 function objectId(val){
   "use strict";
@@ -103,12 +51,7 @@ function doStart(command){
 
 function doFind(dataset, query){
   "use strict";
-
-  // TODO
-  // implement find poeration for query operator
-
-  return [null, _.where(dataset, query)];
-  // return [null, _.query(dataset, query)];
+  return [null, _.query(dataset, query)];
 }
 
 function doInsert(docs) {
@@ -139,7 +82,7 @@ function updateById(id, doc) {
 function doUpdate(query, update, option) {
   "use strict";
   var hits, current;
-  hits = _.query(self.dataset, query);
+  hits = doFind(self.dataset, query)[1];
 
   if (Utils.isZero(_.size(hits))) {
     if (option.upsert) return doInsert(Utils.toArray(update));
@@ -175,32 +118,6 @@ function doSave(docs){
   return doSave(_.rest(docs));
 }
 
-// http://stackoverflow.com/questions/1248302/javascript-object-size
-function roughSizeOfObject( object ) {
-  "use strict";
-  var objectList = [];
-  var stack = [ object ];
-  var bytes = 0;
-
-  while ( stack.length ) {
-    var value = stack.pop();
-    if ( typeof value === 'boolean'){
-      bytes += 4;
-    } else if (typeof value === 'string'){
-      bytes += value.length * 2;
-    } else if (typeof value === 'number'){
-      bytes += 8;
-    } else if (typeof value === 'object' && objectList.indexOf( value ) === -1){
-      objectList.push(value);
-      for (var i in value) {
-        stack.push(value[ i ]);
-      }
-    }
-  }
-  return bytes;
-}
-
-
 /**
  * http://docs.mongodb.org/manual/reference/method/db.collection.find/#definition
  *
@@ -216,25 +133,25 @@ function roughSizeOfObject( object ) {
  * A projection cannot contain both include and exclude specifications, except for the exclusion of the _id field.
  * In projections that explicitly include fields, the _id field is the only field that you can explicitly exclude.
  */
-function project(dataset, projection){
+function doProject(dataset, projection){
   "use strict";
   var pairs     = _.pairs(projection),
-      includes  = _.filter(pairs, function(p){return isOne(p[1])  || isTrue(p[1]);}),
-      excludes  = _.filter(pairs, function(p){return isZero(p[1]) || isFalse(p[1]);}),
+      includes  = _.filter(pairs, function(p){return Utils.isOne(p[1])  || Utils.isTrue(p[1]);}),
+      excludes  = _.filter(pairs, function(p){return Utils.isZero(p[1]) || Utils.isFalse(p[1]);}),
       keys
       ;
 
   if (_.size(includes) > 0) {
     keys = _.pluck(includes, "0");
-    if (isZero(projection["_id"]) || isFalse(projection["_id"])){
+    if (Utils.isZero(projection._id) || Utils.isFalse(projection._id)){
       keys = _.without(keys, "_id");
     } else {
       keys = _.union(keys, ["_id"]);
     }
-    return _.map(data, function(d){return _.pick(d, keys);});
+    return [null, _.map(dataset, function(d){return _.pick(d, keys);})];
   } else {
     keys = _.pluck(excludes, "0");
-    return _.map(data, function(d){return _.omit(d, keys);});
+    return [null, _.map(dataset, function(d){return _.omit(d, keys);})];
   }
 }
 
@@ -262,14 +179,15 @@ self.doCommand = function(memo, command) {
   case "start":
     return doStart(command);
   case "find":
-    return doFind(memo[1], toQuery(command.criteria));
+    return doFind(dataset, toQuery(command.criteria));
   case "insert":
     return doInsert(Utils.toArray(Utils.getOrElse(command.doc),[]));
   case "save":
     return doSave(Utils.toArray(command.doc));
   case "update":
     return doUpdate(toQuery(command.criteria), Utils.getOrElse(command.update, {}), Utils.getOrElse(command.option, {}));
-
+  case "project":
+    return doProject(dataset, Utils.getOrElse(command.projection,{}));
   default :
     return memo;
   }
