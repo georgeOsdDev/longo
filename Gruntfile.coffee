@@ -33,11 +33,25 @@ module.exports = (grunt) ->
           'dest/longo.min.js': 'src/longo.js'
           'dest/longoWorker.min.js': 'src/longoWorker.js'
 
-    jsdoc:
-      dist:
-        src: ['src/*.js', 'ReadMe.md']
+    yuidoc:
+      main:
+        name: '<%= pkg.name %>'
+        description: '<%= pkg.description %>'
+        version: '<%= pkg.version %>'
+        url: '<%= pkg.homepage %>'
         options:
-          destination: 'doc'
+          paths: 'src/'
+          outdir: 'doc/'
+          linkNatives: "true"
+          attributesEmit: "true"
+
+    jsdoc:
+      main:
+        src: ["src/**.js", "ReadMe.md"]
+        options:
+          destination: "doc/"
+          template: "node_modules/grunt-jsdoc/node_modules/ink-docstrap/template"
+          configure: "jsdoc.conf.json"
 
     mocha_phantomjs:
       all: ['test/*.html']
@@ -73,6 +87,7 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks 'grunt-contrib-copy'
   grunt.loadNpmTasks 'grunt-contrib-uglify'
   grunt.loadNpmTasks 'grunt-contrib-jshint'
+  grunt.loadNpmTasks 'grunt-contrib-yuidoc'
   grunt.loadNpmTasks 'grunt-jsdoc'
   grunt.loadNpmTasks 'grunt-mocha-phantomjs'
 
@@ -99,6 +114,6 @@ module.exports = (grunt) ->
       * jshint          : Run linter
       * uglify          : Run UglifyJS command
       * mocha_phantomjs : Run Phantom.JS Test
-      * jsdoc           : Publish API documents
+      * yuidoc          : Publish API documents
       * build           : Do everything avobe
     """).ok()

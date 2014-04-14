@@ -1,0 +1,25 @@
+{
+	"tags"      : {
+		"allowUnknownTags" : true
+	},
+	"plugins"   : ["plugins/markdown"],
+	"templates" : {
+		"cleverLinks"     : false,
+		"monospaceLinks"  : false,
+		"default"         : {
+			"outputSourceFiles" : true
+		},
+		"systemName"      : "Longo",
+		"footer"          : "Source code can be found at <a href='https://github.com/georgeosddev/longo' target='_blank'>github</a>",
+		"copyright"       : "Longo Copyright (c) 2014 <a href='http://about.me/takeharu.oshida' target='_blank'>Takeharu Oshida</a>",
+		"navType"         : "vertical",
+		"theme"           : "spacelab",
+		"linenums"        : true,
+		"collapseSymbols" : false,
+		"inverseNav"      : true
+	},
+	"markdown"  : {
+		"parser"   : "gfm",
+		"hardwrap" : true
+	}
+}

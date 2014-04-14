@@ -170,6 +170,6 @@ Browser compatibility is described [here](https://developer.mozilla.org/en/docs/
 
 ## Licence
 
-Source code can be found on [github](https://github.com/georgeOsdDev/markdown-edit), licenced under [MIT](http://opensource.org/licenses/mit-license.php).
+Source code can be found on [github](https://github.com/georgeOsdDev/longo), licenced under [MIT](http://opensource.org/licenses/mit-license.php).
 
 Developed by [Takeharu.Oshida](http://about.me/takeharu.oshida).
