@@ -10,7 +10,7 @@ Longo does not support Auth, Index, Sharding, etc.
 |db.addUser                  | no        | -           |
 |db.auth                     | no        | -           |
 |db.changeUserPassword       | no        | -           |
-|db.cloneCollection          | yes       | no          |
+|db.cloneCollection          | yes       | yes         |
 |db.cloneDatabase            | no        | -           |
 |db.commandHelp              | no        | -           |
 |db.copyDatabase             | no        | -           |
@@ -104,24 +104,24 @@ Longo does not support Auth, Index, Sharding, etc.
 |----------------------|:---------:|:-----------:|
 |cursor.addOption      | no        | -           |
 |cursor.batchSize      | no        | -           |
-|cursor.count          | yes       | no          |
+|cursor.count          | yes       | yes         |
 |cursor.explain        | no        | -           |
 |cursor.forEach        | yes       | no          |
 |cursor.hasNext        | no        | -           |
 |cursor.hint           | no        | -           |
-|cursor.limit          | yes       | no          |
+|cursor.limit          | yes       | yes         |
 |cursor.map            | yes       | no          |
-|cursor.max            | yes       | no          |
-|cursor.min            | yes       | no          |
+|cursor.max            | yes       | yes         |
+|cursor.min            | yes       | yes         |
 |cursor.next           | no        | -           |
 |cursor.objsLeftInBatch| no        | -           |
 |cursor.readPref       | no        | -           |
 |cursor.showDiskLoc    | no        | -           |
-|cursor.size           | yes       | no          |
-|cursor.skip           | yes       | no          |
+|cursor.size           | yes       | yes         |
+|cursor.skip           | yes       | yes         |
 |cursor.snapshot       | no        | -           |
 |cursor.sort           | yes       | no          |
-|cursor.toArray        | yes       | no          |
+|cursor.toArray        | yes       | yes         |
 
 | Original APIs                    | inpremented |
 |----------------------------------|:-----------:|

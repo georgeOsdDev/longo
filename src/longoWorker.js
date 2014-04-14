@@ -1,9 +1,14 @@
-/*
- * longo
- * https://github.com/georgeOsdDev/Longo
+/**
+ * @project jsdoc
+ * @see https://github.com/georgeOsdDev/Longo
  *
- * The MIT License (MIT)
- * Copyright (c) 2014 Takeharu Oshida <georgeosddev@gmail.com>
+ * @license   The MIT License (MIT)
+ * @copyright Copyright (c) 2014 Takeharu Oshida <georgeosddev@gmail.com>
+ */
+
+
+/**
+ * @module longoWorker
  */
 
 // for jshint
@@ -187,6 +192,73 @@ function doLimit(dataset, limit){
   return [null, _.first(dataset, limit)];
 }
 
+function doSkip(dataset, skip){
+  "use strict";
+  return [null, _.rest(dataset, skip)];
+}
+
+function doCount(dataset){
+  "use strict";
+  return [SKIP_REST, [_.size(dataset)]];
+}
+
+function doSize(dataset){
+  "use strict";
+  return [SKIP_REST, [Utils.str2ab(JSON.stringify(dataset)).bytesize]];
+}
+
+function doToArray(dataset){
+  "use strict";
+  return [null, dataset];
+}
+
+function doMax(dataset, indexBounds){
+  "use strict";
+  var k, v, query;
+  k = _.keys(indexBounds);
+  v = _.values(indexBounds, function(val){
+    return {"$lte": val};
+  });
+  query = _.object(k, v);
+  return doFind(dataset, query);
+}
+
+function doMin(dataset, indexBounds){
+  "use strict";
+  var k, v, query;
+  k = _.keys(indexBounds);
+  v = _.values(indexBounds, function(val){
+    return {"$gte": val};
+  });
+  query = _.object(k, v);
+  return doFind(dataset, query);
+}
+
+function doForEach(dataset, func){
+  /*jshint -W054 */
+  "use strict";
+  if (!func) return [null, dataset];
+  var f = (new Function(func+""))();
+  try {
+    return [null, _.forEach(dataset, f)];
+  } catch (e){
+    return [Longo.Error.EVAL_ERROR, null];
+  }
+}
+
+function doMap(dataset, func){
+  /*jshint -W054 */
+  "use strict";
+  if (!func) return [null, dataset];
+  var f = (new Function(func+""))();
+  try {
+    return [null, _.map(dataset, f)];
+  } catch (e){
+    return [Longo.Error.EVAL_ERROR, null];
+  }
+}
+
+
 function getExecuter(seq){
   "use strict";
   return function(memo, command){
@@ -213,6 +285,24 @@ function getExecuter(seq){
       return doProject(dataset, Utils.getOrElse(command.projection,{}));
     case "limit":
       return doLimit(dataset, Utils.getOrElse(command.value, 15));
+    case "skip":
+      return doSkip(dataset, Utils.getOrElse(command.value, 0));
+    case "count":
+      return doCount(dataset);
+    case "size":
+      return doSize(dataset);
+    case "toArray":
+      return doToArray(dataset);
+    case "max":
+      return doMax(dataset, Utils.getOrElse(command.indexBounds, {}));
+    case "min":
+      return doMin(dataset, Utils.getOrElse(command.indexBounds, {}));
+    case "forEach":
+      return doForEach(dataset, Utils.getOrElse(command.func, null));
+    case "map":
+      return doMap(dataset, Utils.getOrElse(command.func, null));
+
+
     default :
       return memo;
     }
@@ -232,6 +322,7 @@ self.send = function(message) {
 
 self.addEventListener("message", function(e) {
   "use strict";
+
   var request, data, cmds, seq, result = [], executer;
   request = Utils.tryParseJSON(Utils.ab2str(e.data));
 
