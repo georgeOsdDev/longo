@@ -2,7 +2,7 @@
 
 > This is a example implementation of TodoMVC by Longo.js.
 
-> In fact, since the this is a sample about Longo.js, This sample not in MVC style.
+> In fact, since this is a sample about Longo.js, this sample not in MVC style.
 
 > _[Longo.js](http://georgeosddev.github.io/longo/)_
 
@@ -26,8 +26,8 @@ The Longo.js implementation of TodoMVC has a few key differences with other impl
 
 * Longo.js is not MVC Framework, it is just an asynchronous database.
 * Longo.js does not contain MVC logic (eg.Binding Model to View, etc).
-* So this sample is based on (Jquery implementation)[https://github.com/tastejs/todomvc/tree/gh-pages/architecture-examples/jquery]
-* This sample show how Longo work as `Reactive`.
+* So this sample is based on [Jquery implementation](https://github.com/tastejs/todomvc/tree/gh-pages/architecture-examples/jquery)
+* This sample show how Longo work as **Reactive**.
 
 
 ## Running
@@ -36,13 +36,15 @@ Longo use HTML5 [Web Worker](https://developer.mozilla.org/en/docs/Web/Guide/Per
 
 Browser compatibility is described [here](https://developer.mozilla.org/en/docs/Web/Guide/Performance/Using_web_workers#Browser_Compatibility)
 
-1. Install [node.js](nodejs.org) (required for `bower` client-side package management, `grunt` the javascript task runner)
-1. Install grunt: `npm install -g grunt-cli`
-1. Install bower: `npm install -g bower`
+1. Install [node.js](nodejs.org)
+1. Required for `bower` client-side package management, `grunt` the javascript task runner
+ * Install grunt: `npm install -g grunt-cli`
+ * Install bower: `npm install -g bower`
 
 1. From the root folder, `grunt build`
 1. From the `example/todomvc/` folder, run `bower update`
-1. Start a web server in the `example/` folder.  Hint: if you have python installed, you can just run:
+1. Start a web server in the `example/` folder.
+	 Hint: if you have python installed, you can just run:
 
      `python -m SimpleHTTPServer`
 
