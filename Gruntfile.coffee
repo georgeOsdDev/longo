@@ -81,7 +81,15 @@ module.exports = (grunt) ->
           }
 
         ]
-
+      sample:
+        files: [
+          {
+            expand: true
+            cwd: 'dest'
+            src: ['./**']
+            dest: 'example/Longo.js'
+          }
+        ]
   # load
   grunt.loadNpmTasks 'grunt-contrib-clean'
   grunt.loadNpmTasks 'grunt-contrib-copy'

@@ -6,3 +6,4 @@ dest/*
 memo.md
 npm-debug.log
 test/result/*
+example/Longo.js
