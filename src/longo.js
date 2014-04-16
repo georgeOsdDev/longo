@@ -78,6 +78,7 @@
         }
       }
     }
+    if (Longo.LONGOROOT !== root) console.info("LONGOROOT is setted :" + root);
     Longo.LONGOROOT = root;
   };
   wnd.addEventListener("load", Longo.setRoot, false);
@@ -191,6 +192,12 @@
    * @constant
    */
   Longo.Error.EVAL_ERROR = 12;
+  /**
+   * INVALID_MODIFIER_SPECIFIED
+   * @memberOf Longo.Error
+   * @constant
+   */
+  Longo.Error.INVALID_MODIFIER_SPECIFIED = 13;
 
   Longo.ErrorCds = _.invert(Longo.Error);
 
@@ -717,16 +724,23 @@
     return new Cursor(this, cmds);
   };
 
+  Collection.prototype.findAndModify = function() {
+
+  };
+
+
 
   Collection.prototype.parsist = function(){
-
+    var self = this;
+    this.find({}).onValue(function(e, result){
+      localStorage.setItem("Longo:" + self.db.name + ":" + self.name, JSON.stringify(result));
+    });
   };
 
   Collection.prototype.copyTo = function() {};
   Collection.prototype.dataSize = function() {};
   Collection.prototype.copyTo = function() {};
   Collection.prototype.distinct = function() {};
-  Collection.prototype.findAndModify = function() {};
   Collection.prototype.group = function() {};
   Collection.prototype.mapReduce = function() {};
   Collection.prototype.renameCollection = function(name) {

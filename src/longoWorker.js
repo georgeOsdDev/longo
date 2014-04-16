@@ -11,6 +11,13 @@
  * @module longoWorker
  */
 
+
+function log(obj){
+  "use strict";
+  console.log(JSON.stringify(obj));
+}
+log();
+
 // for jshint
 /* global self:false, Longo:false */
 
@@ -30,6 +37,78 @@ self.option  = {
 self.isUpdatedBySeq = {};
 var SKIP_REST = "SKIP_REST";
 var CHARS     = "abcdefghijklmnopqrstuvwxyz0123456789".split("");
+
+var UPDATE_OPERATORS = [
+  "$inc",
+  "$mul",
+  "$rename",
+  "$setOnInsert",
+  "$set",
+  "$unset",
+  "$min",
+  "$max",
+  "$currentDate",
+  "$invert"
+  // "$",
+  // "$addToSet",
+  // "$pop",
+  // "$pullAll",
+  // "$pull",
+  // "$pushAll",
+  // "$push",
+  // "$each",
+  // "$slice",
+  // "$sort",
+  // "$position",
+  // "$bit",
+  // "$isolated",
+];
+
+function applyOperator(doc, current){
+  "use strict";
+  var result = _.identity(current);
+  var operators = _.keys(doc);
+  var pairs;
+
+  _.each(operators, function(op){
+    pairs = doc[op];
+    switch (op) {
+    case "$inc" :
+      _.each(_.keys(pairs), function(k){
+        if (_.isNumber(current[k]) && _.isNumber(pairs[k])) result[k] = current[k] + pairs[k];
+      });
+      break;
+    case "$mul" :
+      _.each(_.keys(pairs), function(k){
+        if (_.isNumber(current[k]) && _.isNumber(pairs[k])) result[k] = current[k] * pairs[k];
+      });
+      break;
+    case "$rename" :
+      _.each(_.keys(pairs), function(k){
+        if (_.has(current,k)) result[pairs[k]] = current[k];
+      });
+      break;
+    case "$set" :
+      _.each(_.keys(pairs), function(k){
+        if (_.has(current,k)) result[k] = pairs[k];
+      });
+      break;
+    case "$unset" :
+      _.each(_.keys(pairs), function(k){
+        if (_.has(current,k)) delete result[k];
+      });
+      break;
+    case "$mod" :
+      _.each(_.keys(pairs), function(k){
+        if (_.isNumber(current[k]) && _.isNumber(pairs[k])) result[k] = current[k] % pairs[k];
+      });
+      break;
+    default:
+      //noop
+    }
+  });
+  return result;
+}
 
 /*
  * return random string length 24
@@ -73,7 +152,7 @@ function doInsert(docs, seq) {
   if (Utils.isZero(_.size(docs))){
     return [SKIP_REST, null];
   }
-  var doc = toDocument(_.first(docs));
+  var doc = _.omit(toDocument(_.first(docs)), UPDATE_OPERATORS);
 
   if (!doc._id) {
     doc._id = objectId();
@@ -85,12 +164,22 @@ function doInsert(docs, seq) {
   return doInsert(_.rest(docs), seq);
 }
 
-function updateById(id, doc, seq) {
+function updateById(current, doc, seq) {
   "use strict";
   doc = toDocument(doc);
   if (doc._id) return [Longo.Error.MOD_ID_NOT_ALLOWED, null];
-  doc._id = id;
-  self.dataset = _.reject(self.dataset, function(d){return d._id === id;}).concat([doc]);
+
+  var operators = _.pick(doc, UPDATE_OPERATORS);
+  var normal    = _.omit(doc, UPDATE_OPERATORS);
+
+  if (_.size(operators) > 0 ) {
+    if (_.size(normal) > 0) return [Longo.Error.INVALID_MODIFIER_SPECIFIED, null];
+
+    doc = applyOperator(doc, current);
+  }
+
+  doc._id = current._id;
+  self.dataset = _.reject(self.dataset, function(d){return d._id === current._id;}).concat([doc]);
   self.isUpdatedBySeq[seq] = true;
   return [null, null];
 }
@@ -105,14 +194,17 @@ function doUpdate(query, update, option, seq) {
     return [Longo.Error.DOCUMENT_NOT_FOUND, null];
   } else if (Utils.isOne(_.size(hits))) {
     current = hits[0];
-    return updateById(current._id, update, seq);
+    return updateById(current, update, seq);
   } else {
-    if (!option.multi) hits = [_.first(hits)];
+    if (!option.multi) return updateById(current, update, seq);
     if (update._id) return [Longo.Error.MOD_ID_NOT_ALLOWED, null];
-    _.each(hits, function(current){
-      updateById(current._id, update, seq);
+
+    var res = [null, null];
+    _.every(hits, function(current){
+      res = updateById(current, update, seq);
+      return res[0] === null;
     });
-    return [null, null];
+    return res;
   }
 }
 
@@ -258,6 +350,22 @@ function doMap(dataset, func){
   }
 }
 
+function doSort(dataset, sorter) {
+  "use strict";
+  /*jshint -W054 */
+  if (_.isString(sorter)) {
+    var f = (new Function(sorter+""))();
+    return [null,  _.sortBy(dataset, f)];
+  } else {
+    var key   = _.keys(sorter)[0],
+        order = sorter[key],
+        sorted
+        ;
+    sorted = _.sortBy(dataset, key);
+    if (!Utils.isOne(order)) return [null, sorted.reverse()];
+    return [null, sorted];
+  }
+}
 
 function getExecuter(seq){
   "use strict";
@@ -301,6 +409,8 @@ function getExecuter(seq){
       return doForEach(dataset, Utils.getOrElse(command.func, null));
     case "map":
       return doMap(dataset, Utils.getOrElse(command.func, null));
+    case "sort":
+      return doSort(dataset, Utils.getOrElse(command.sorter, {"_id":1}));
 
 
     default :
