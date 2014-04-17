@@ -22,7 +22,7 @@ jQuery(function ($) {
 			this.bindEvents();
 
 			Longo.setRoot();
-			this.db = new Longo.DB("todos-longo");
+			this.db = new Longo.use("todos-longo");
 			this.db.collection("tasks").find({}).sort({"_id":1}).onValue(function(error, results){
 				self.allTodoCount = results.length;
 				self.allTodos     = results;
