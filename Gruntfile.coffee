@@ -4,7 +4,7 @@ module.exports = (grunt) ->
   grunt.initConfig
     pkg: grunt.file.readJSON 'package.json'
 
-    clean: ['dest/*', 'doc/*']
+    clean: ['dest/*', 'doc/out/']
 
     jshint:
       test: ['src/*.js']
@@ -21,8 +21,8 @@ module.exports = (grunt) ->
                    * <%= pkg.name %> v-<%= pkg.version %>
                    * Source code can be found at <%= pkg.homepage %>
                    *
-                   * @license   The MIT License (MIT)
-                   * @copyright Copyright (c) 2014 <%= pkg.author %>
+                   * license   The MIT License (MIT)
+                   * copyright Copyright (c) 2014 <%= pkg.author %>
                    */
 
                   """
@@ -33,25 +33,14 @@ module.exports = (grunt) ->
           'dest/longo.min.js': 'src/longo.js'
           'dest/longoWorker.min.js': 'src/longoWorker.js'
 
-    yuidoc:
-      main:
-        name: '<%= pkg.name %>'
-        description: '<%= pkg.description %>'
-        version: '<%= pkg.version %>'
-        url: '<%= pkg.homepage %>'
-        options:
-          paths: 'src/'
-          outdir: 'doc/'
-          linkNatives: "true"
-          attributesEmit: "true"
-
     jsdoc:
       main:
         src: ["src/**.js", "ReadMe.md"]
         options:
-          destination: "doc/"
+          destination: "doc/out/"
           template: "node_modules/grunt-jsdoc/node_modules/ink-docstrap/template"
           configure: "jsdoc.conf.json"
+          tutorials: "doc/guide/"
 
     mocha_phantomjs:
       all: ['test/*.html']
@@ -95,7 +84,6 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks 'grunt-contrib-copy'
   grunt.loadNpmTasks 'grunt-contrib-uglify'
   grunt.loadNpmTasks 'grunt-contrib-jshint'
-  grunt.loadNpmTasks 'grunt-contrib-yuidoc'
   grunt.loadNpmTasks 'grunt-jsdoc'
   grunt.loadNpmTasks 'grunt-mocha-phantomjs'
 
@@ -122,6 +110,6 @@ module.exports = (grunt) ->
       * jshint          : Run linter
       * uglify          : Run UglifyJS command
       * mocha_phantomjs : Run Phantom.JS Test
-      * yuidoc          : Publish API documents
+      * jsdoc           : Publish API documents
       * build           : Do everything avobe
     """).ok()

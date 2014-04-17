@@ -1,25 +1,32 @@
+/* global self:false, Longo:false */
+
 /**
- * @project jsdoc
+ * @project Longo.js
+ * @module longoWorker
+ * @desc This module is work only WebWorker thread.<br>
+ *       Longo automatically create worker thread. So user application does not need use this module directory.
+ *
  * @see https://github.com/georgeOsdDev/Longo
  *
  * @license   The MIT License (MIT)
  * @copyright Copyright (c) 2014 Takeharu Oshida <georgeosddev@gmail.com>
  */
 
-
 /**
- * @module longoWorker
  */
 
-
-function log(obj){
+self.logger = function(obj, method){
   "use strict";
-  console.log(JSON.stringify(obj));
-}
-log();
-
-// for jshint
-/* global self:false, Longo:false */
+  var msg = {
+    "data":obj,
+    "workerName":self.name
+  };
+  var loglevel = method || "log";
+  // console in WebWorker thread does not accept more than one arguments
+  // eg. console.log(1,2,3); -> console display just only `1`
+  // So use JSON
+  if (console && console[loglevel]) console[loglevel].call(console, JSON.stringify(msg));
+};
 
 
 // import utilities
@@ -136,9 +143,12 @@ function toDocument(doc) {
 
 function doStart(command, seq){
   "use strict";
+  self.name   = command.name;
   self.option = command.option;
   self.dataset = command.dataset;
   self.isUpdatedBySeq[seq] = true;
+  self.logger("start");
+  self.logger("start","error");
   return [null, []];
 }
 
@@ -242,21 +252,6 @@ function doRemove(query, justOne, seq){
   return [null, null];
 }
 
-/**
- * http://docs.mongodb.org/manual/reference/method/db.collection.find/#definition
- *
- * The projection parameter takes a document of the following form:
- * { field1: <boolean>, field2: <boolean> ... }
- * The <boolean> value can be any of the following:
-
- * - 1 or true to include the field.
- * The find() method always includes the _id field
- * even if the field is not explicitly stated to return in the projection parameter.
- *
- * - 0 or false to exclude the field.
- * A projection cannot contain both include and exclude specifications, except for the exclusion of the _id field.
- * In projections that explicitly include fields, the _id field is the only field that you can explicitly exclude.
- */
 function doProject(dataset, projection){
   "use strict";
   var pairs     = _.pairs(projection),
@@ -378,7 +373,7 @@ function getExecuter(seq){
 
     switch(command.cmd) {
     case "start":
-      return doStart(command,seq);
+      return doStart(command, seq);
     case "find":
       return doFind(dataset, toQuery(command.criteria));
     case "insert":

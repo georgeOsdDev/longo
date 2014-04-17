@@ -7,7 +7,4 @@ memo.md
 npm-debug.log
 test/result/*
 example/Longo.js
-doc/*.html
-doc/img
-doc/scripts
-doc/styles
+doc/out/*

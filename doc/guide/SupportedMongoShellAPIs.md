@@ -1,7 +1,10 @@
-This matrix is not well maintenanced yet.
+# *This matrix is not well maintenanced yet.*
 
-# Supported [MongoDB Shell Methods](http://docs.mongodb.org/manual/reference/method/)
-Longo does not support Auth, Index, Sharding, etc.
+Longo is focusing to be work as like as Mongo Shell in browser world.
+
+[Mongo Shell APIs](http://docs.mongodb.org/manual/reference/method/) described below are supported.
+
+Except non-CRUD operation like Sharding, Replication, Auth, etcetra are not supported because it is used only in the browser by single user.
 
 ##Database APIs
 
@@ -125,9 +128,15 @@ Longo does not support Auth, Index, Sharding, etc.
 
 | Original APIs                    | inpremented |
 |----------------------------------|:-----------:|
+|cursor.done                       | yes         |
 |cursor.onValue                    | yes         |
 
 
 ##Query operators
 
 Query operators are depended on [underscore-query](https://github.com/davidgtonge/underscore-query#query-api).
+
+##Projection operators
+
+
+##Update operators

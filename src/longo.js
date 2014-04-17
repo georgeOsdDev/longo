@@ -1,9 +1,11 @@
 /*
- * Longo.js https://github.com/georgeOsdDev/Longo
+ * @project Longo.js
+ * @desc Asynchronous local database with a flavor of FRP.
  *
- * @author Takeharu Oshida <georgeosddev@gmail.com>
- * The MIT License (MIT)
- * Copyright (c) 2014 Takeharu Oshida <georgeosddev@gmail.com>
+ * @see https://github.com/georgeOsdDev/Longo
+ *
+ * @license   The MIT License (MIT)
+ * @copyright Copyright (c) 2014 Takeharu Oshida <georgeosddev@gmail.com>
  */
 
 (function(global, undefined) {
@@ -572,6 +574,7 @@
     var msg = {
       "cmds": [{
         "cmd":"start",
+        "name": this.name,
         "option": this.option,
         "dataset": _dataset
       }]

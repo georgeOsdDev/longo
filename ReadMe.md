@@ -80,7 +80,7 @@ Longo is focusing to be work as like as Mongo Shell in browser world.
 
 Because it is used in browser, Non-CRUD operation like Sharding, Replication, Auth, etcetra are not supported.
 
-See [diffrence between Mongo Shell](https://github.com/georgeOsdDev/longo/blob/master/supportedMongoShell.md).
+See [diffrence between Mongo Shell](https://github.com/georgeOsdDev/longo/blob/master/doc/supportedMongoShell.md).
 
 
 ### Basic Example
