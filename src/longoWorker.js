@@ -12,13 +12,10 @@
  * @copyright Copyright (c) 2014 Takeharu Oshida <georgeosddev@gmail.com>
  */
 
-/**
- */
-
 self.logger = function(obj, method){
   "use strict";
   var msg = {
-    "data":obj,
+    "msg":obj,
     "workerName":self.name
   };
   var loglevel = method || "log";
@@ -147,8 +144,7 @@ function doStart(command, seq){
   self.option = command.option;
   self.dataset = command.dataset;
   self.isUpdatedBySeq[seq] = true;
-  self.logger("start");
-  self.logger("start","error");
+  self.logger("Longo Collection Worker Started", "info");
   return [null, []];
 }
 
@@ -167,7 +163,7 @@ function doInsert(docs, seq) {
   if (!doc._id) {
     doc._id = objectId();
   } else {
-    if (_.where(self.dataset, {"_id":doc._id}).length > 0) return [Longo.Error.DUPLICATE_KEY_ERROR, doc];
+    if (_.where(self.dataset, {"_id":doc._id}).length > 0) return [new Longo.Error(Longo.Error.DUPLICATE_KEY_ERROR, "_id: "+doc._id), doc];
   }
   self.dataset.push(doc);
   self.isUpdatedBySeq[seq] = true;
@@ -177,13 +173,13 @@ function doInsert(docs, seq) {
 function updateById(current, doc, seq) {
   "use strict";
   doc = toDocument(doc);
-  if (doc._id) return [Longo.Error.MOD_ID_NOT_ALLOWED, null];
+  if (doc._id) return [new Longo.Error(Longo.Error.MOD_ID_NOT_ALLOWED, "_id: "+doc._id), null];
 
   var operators = _.pick(doc, UPDATE_OPERATORS);
   var normal    = _.omit(doc, UPDATE_OPERATORS);
 
   if (_.size(operators) > 0 ) {
-    if (_.size(normal) > 0) return [Longo.Error.INVALID_MODIFIER_SPECIFIED, null];
+    if (_.size(normal) > 0) return [new Longo.Error(Longo.Error.INVALID_MODIFIER_SPECIFIED, normal[0]), null];
 
     doc = applyOperator(doc, current);
   }
@@ -201,13 +197,13 @@ function doUpdate(query, update, option, seq) {
 
   if (Utils.isZero(_.size(hits))) {
     if (option.upsert) return doInsert(Utils.toArray(update), seq);
-    return [Longo.Error.DOCUMENT_NOT_FOUND, null];
+    return [new Longo.Error(Longo.Error.DOCUMENT_NOT_FOUND, "query: "+JSON.stringify(query)), null];
   } else if (Utils.isOne(_.size(hits))) {
     current = hits[0];
     return updateById(current, update, seq);
   } else {
     if (!option.multi) return updateById(current, update, seq);
-    if (update._id) return [Longo.Error.MOD_ID_NOT_ALLOWED, null];
+    if (update._id) return [new Longo.Error(Longo.Error.MOD_ID_NOT_ALLOWED, "_id: "+update._id), null];
 
     var res = [null, null];
     _.every(hits, function(current){
@@ -240,7 +236,7 @@ function doRemove(query, justOne, seq){
   var hits = doFind(self.dataset, query)[1],
       ids;
 
-  if (Utils.isZero(_.size(hits))) return [Longo.Error.DOCUMENT_NOT_FOUND, null];
+  if (Utils.isZero(_.size(hits))) return [new Longo.Error(Longo.Error.DOCUMENT_NOT_FOUND, "query: "+JSON.stringify(query)), null];
 
   if (justOne){
     self.dataset = _.reject(self.dataset, function(doc){ return doc._id === hits[0]._id;});
@@ -329,7 +325,7 @@ function doForEach(dataset, func){
   try {
     return [null, _.forEach(dataset, f)];
   } catch (e){
-    return [Longo.Error.EVAL_ERROR, null];
+    return [new Longo.Error(Longo.Error.EVAL_ERROR, "function: "+func, e.stack), null];
   }
 }
 
@@ -341,7 +337,7 @@ function doMap(dataset, func){
   try {
     return [null, _.map(dataset, f)];
   } catch (e){
-    return [Longo.Error.EVAL_ERROR, null];
+    return [new Longo.Error(Longo.Error.EVAL_ERROR, "function: "+func, e.stack), null];
   }
 }
 
@@ -350,7 +346,11 @@ function doSort(dataset, sorter) {
   /*jshint -W054 */
   if (_.isString(sorter)) {
     var f = (new Function(sorter+""))();
-    return [null,  _.sortBy(dataset, f)];
+    try {
+      return [null,  _.sortBy(dataset, f)];
+    } catch (e) {
+      return [new Longo.Error(Longo.Error.EVAL_ERROR, "sorter: "+sorter, e.stack), null];
+    }
   } else {
     var key   = _.keys(sorter)[0],
         order = sorter[key],

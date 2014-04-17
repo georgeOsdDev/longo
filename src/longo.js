@@ -1,6 +1,15 @@
 /*
  * @project Longo.js
+ * @module Longo
  * @desc Asynchronous local database with a flavor of FRP.
+ * @requires underscore.js
+ * @example
+ * &lt;script type="text/javascript" src="path/to/Longo.js/lib/underscore-min.js"&gt;&lt;/script&gt;
+ * &lt;script type="text/javascript" src="path/to/Longo.js/longo.js"&gt;&lt;/script&gt;
+ * &lt;script&gt;
+ *   // Adjust root directory.
+ *   Longo.setRoot("path/to/Longo.js");
+ * &lt;script&gt;
  *
  * @see https://github.com/georgeOsdDev/Longo
  *
@@ -19,102 +28,89 @@
   var Longo = global.Longo = {};
 
   /**
-   * VERSION
-   * @field
-   * @memberOf Longo
+   * VERSION of module
+   * @memberof Longo
    * @constant
+   * @type {String}
    */
-  var VERSION = Longo.VERSION = "0.1.0";
-
-  /**
-   * return version of Longo module
-   * @name Longo.getVersion
-   * @function
-   * @memberOf Longo
-   * @public
-   */
-  Longo.getVersion = function() {
-    return VERSION;
-  };
+  Longo.VERSION = "0.1.0";
 
   /**
    * This value is automatically updated on window onload event.<br>
    * If you want to access DB object before window onload, <br>
    * be sure that set correct path with `setRoot`.
    *
-   * @memberOf Longo
+   * @memberof Longo
+   * @constant
+   * @type {String}
    * @default "/Longo.js"
    */
   Longo.LONGOROOT = "/Longo.js";
 
   /**
-   * If you are using longo.min.js, this value will be replaced with "longoWorker.min.js"
+   * If you are using longo.min.js, this value will be replaced with `longoWorker.min.js`
    *
-   * @memberOf Longo
+   * @constant
+   * @memberof Longo
+   * @type {String}
    * @default "longoWorker.js"
    */
   Longo.WORKERJS  = "longoWorker.js";
 
-
   /**
-   * Set rootPath for longo modules.
+   * LogLevel
    *
-   * @method setRoot
-   * @memberOf Longo
-   * @public
-   * @param {String} root Abstruct path of longo root
-   * @example
-   * Longo.setRoot("/javascript/vender/longo");
-   */
-  Longo.setRoot = function(root){
-    if (_.isUndefined(root) || root instanceof wnd.Event) {
-      root = "/Longo.js";
-      var scripts = wnd.document.getElementsByTagName("script");
-      var i = scripts.length;
-      while (i--) {
-        var match = scripts[i].src.match(/(^|.*)\/longo(\.min){0,}\.js$/);
-        if (match) {
-          root = match[1];
-          if(match[2]) Longo.WORKERJS = "longoWorker.min.js";
-          break;
-        }
-      }
-    }
-    if (Longo.LONGOROOT !== root) console.info("LONGOROOT is setted :" + root);
-    Longo.LONGOROOT = root;
-  };
-  wnd.addEventListener("load", Longo.setRoot, false);
-
-  /**
-   * Force load minified longoWorker module.
-   * @method useMinified
-   * @memberOf Longo
-   * @public
-   */
-  Longo.useMinified = function(){
-    Longo.WORKERJS = "longoWorker.min.js";
-  };
-
-
-  /**
-   * STATUS
-   * @memberOf Longo
    * @constant
+   * @memberof Longo
+   * @type {String}
+   * @default "warn"
+   */
+  Longo.LOGLEVEL = "warn";
+
+  /**
+   * @name Longo.Status
+   * @namespace
    */
   var Status = Longo.Status = {
+  /**
+   * CREATED
+   * @memberof Longo.Status
+   * @type {Number}
+   * @constant
+   */
     "CREATED": 0,
+  /**
+   * STARTED
+   * @memberof Longo.Status
+   * @type {Number}
+   * @constant
+   */
     "STARTED": 1,
+  /**
+   * STOPPED
+   * @memberof Longo.Status
+   * @type {Number}
+   * @constant
+   */
     "STOPPED": 2,
+  /**
+   * DELETED
+   * @memberof Longo.Status
+   * @type {Number}
+   * @constant
+   */
     "DELETED": 3
   };
 
   /**
    * @name Longo.Error
-   * @class
-   * @param {Number} code
-   * @param {String} message
-   * @param {Object} stack
+   * @class Longo.Error
+   * @param {Number} code    error code
+   * @param {String} message error message
+   * @param {Object} stack   error stack trace
+   * @private
    * @constructs
+   * @extends Error
    */
   Longo.Error = function(code, message, stack) {
     this.code = code;
@@ -124,109 +120,121 @@
 
   /**
    * UNEXPECTED_ERROR
-   * @memberOf Longo.Error
+   * @memberof Longo.Error
    * @constant
    */
   Longo.Error.UNEXPECTED_ERROR = 1;
   /**
    * EXECUTION_ERROR
-   * @memberOf Longo.Error
+   * @memberof Longo.Error
    * @constant
    */
   Longo.Error.EXECUTION_ERROR = 2;
   /**
    * WEBWORKER_ERROR
-   * @memberOf Longo.Error
+   * @memberof Longo.Error
    * @constant
    */
   Longo.Error.WEBWORKER_ERROR = 3;
   /**
    * INVALID_QUERY
-   * @memberOf Longo.Error
+   * @memberof Longo.Error
    * @constant
    */
   Longo.Error.INVALID_QUERY = 4;
   /**
    * COLLECTION_NOT_FOUND
-   * @memberOf Longo.Error
+   * @memberof Longo.Error
    * @constant
    */
   Longo.Error.COLLECTION_NOT_FOUND = 5;
   /**
    * COLLECTION_ALREADY_EXISTS
-   * @memberOf Longo.Error
+   * @memberof Longo.Error
    * @constant
    */
   Longo.Error.COLLECTION_ALREADY_EXISTS = 6;
   /**
    * COLLECTION_NOT_STARTED
-   * @memberOf Longo.Error
+   * @memberof Longo.Error
    * @constant
    */
   Longo.Error.COLLECTION_NOT_STARTED = 7;
   /**
    * DUPLICATE_KEY_ERROR
-   * @memberOf Longo.Error
+   * @memberof Longo.Error
    * @constant
    */
   Longo.Error.DUPLICATE_KEY_ERROR = 8;
   /**
    * DOCUMENT_NOT_FOUND
-   * @memberOf Longo.Error
+   * @memberof Longo.Error
    * @constant
    */
   Longo.Error.DOCUMENT_NOT_FOUND = 9;
   /**
    * MOD_ID_NOT_ALLOWED
-   * @memberOf Longo.Error
+   * @memberof Longo.Error
    * @constant
    */
   Longo.Error.MOD_ID_NOT_ALLOWED = 10;
   /**
    * NOT_SUPPOETRD
-   * @memberOf Longo.Error
+   * @memberof Longo.Error
    * @constant
    */
   Longo.Error.NOT_SUPPOETRD = 11;
   /**
    * EVAL_ERROR
-   * @memberOf Longo.Error
+   * @memberof Longo.Error
    * @constant
    */
   Longo.Error.EVAL_ERROR = 12;
   /**
    * INVALID_MODIFIER_SPECIFIED
-   * @memberOf Longo.Error
+   * @memberof Longo.Error
    * @constant
    */
   Longo.Error.INVALID_MODIFIER_SPECIFIED = 13;
 
   Longo.ErrorCds = _.invert(Longo.Error);
 
+
   /**
+   * Utility methods of Longo
    * @namespace
    * @name Longo.Utils
-   * @memberOf Longo
+   * @memberof Longo
    * @static
    */
   var Utils = Longo.Utils = {
 
-    // For Zero-Copy
-    // Convert ArrayBuffer to and from String
-    // messageing(http://www.html5rocks.com/en/tutorials/webgl/typed_arrays/#toc-transferables)
-    // http://updates.html5rocks.com/2012/06/How-to-convert-ArrayBuffer-to-and-from-String
     /**
-     * ab2str for zero-copy
+     * Decode Uint16Array to String
+     * @see Longo.Utils.str2ab
+     * @see http://www.html5rocks.com/en/tutorials/webgl/typed_arrays/#toc-transferables
+     * @see http://updates.html5rocks.com/2012/06/How-to-convert-ArrayBuffer-to-and-from-String
      * @function
-     * @memberOf Longo.Utils
+     * @memberof Longo.Utils
      * @static
-     * @param {Object} buf
-     * @return {String} str
+     * @param {Uint16Array} buf Uint16Array
+     * @return {String} str decoded string
      */
     ab2str: function(buf) {
       return String.fromCharCode.apply(null, new global.Uint16Array(buf));
     },
 
+    /**
+     * Encode String to Uint16Array for zero-copy messageing
+     * @see Longo.Utils.ab2str
+     * @see http://www.html5rocks.com/en/tutorials/webgl/typed_arrays/#toc-transferables
+     * @see http://updates.html5rocks.com/2012/06/How-to-convert-ArrayBuffer-to-and-from-String
+     * @function
+     * @memberof Longo.Utils
+     * @static
+     * @param {String} str target string
+     * @return {Uint16Array} buf encoded Uint16Array
+     */
     str2ab: function(str) {
       var buf = new global.ArrayBuffer(str.length * 2); // 2 bytes for each char
       var bufView = new global.Uint16Array(buf);
@@ -236,6 +244,16 @@
       return bufView;
     },
 
+    /**
+     * Browser-friendly inheritance fully compatible with standard node.js inherits<br>
+     * This method have Side-effect
+     * @see https://github.com/isaacs/inherits
+     * @function
+     * @memberof Longo.Utils
+     * @static
+     * @param {Function} ctor constructor
+     * @return {Function} superCtor constructor of superClass
+     */
     inherits: function(ctor, superCtor) {
       ctor._super = superCtor;
       ctor.prototype = Object.create(superCtor.prototype, {
@@ -248,69 +266,217 @@
       });
     },
 
-    createLogger: function(prefix) {
+    /**
+     * return prefixed logger.
+     * @function
+     * @memberof Longo.Utils
+     * @static
+     * @param {prefix}
+     * @return {Object} logger
+     */
+    createLogger: function(prefix, loglevel) {
+      var lookup = {
+        "log":4,
+        "debug":3,
+        "info":2,
+        "warn":1,
+        "error":0,
+      };
       var _logger = {
         log: function() {},
+        debug: function() {},
+        info: function() {},
+        warn: function() {},
         error: function() {}
       };
+      var level = lookup[loglevel+"".toLowerCase()] || 5;
       if (!wnd.console) return _logger;
-      _logger.log = (function() {
-        return wnd.console.log.bind(wnd.console, prefix);
-      })();
+
+      if (level > 3) {
+        _logger.log = (function() {
+          return wnd.console.log.bind(wnd.console, prefix);
+        })();
+      }
+
+      if (level > 2) {
+        _logger.debug = (function() {
+          return wnd.console.debug.bind(wnd.console, prefix);
+        })();
+      }
+
+      if (level > 1) {
+        _logger.info = (function() {
+          return wnd.console.info.bind(wnd.console, prefix);
+        })();
+      }
+
+      if (level > 0) {
+        _logger.warn = (function() {
+          return wnd.console.warn.bind(wnd.console, prefix);
+        })();
+      }
+
       _logger.error = (function() {
         return wnd.console.error.bind(wnd.console, prefix);
       })();
       return _logger;
     },
 
+    /**
+     * Do nothing
+     * @function
+     * @memberof Longo.Utils
+     * @static
+     * @return undefined
+     */
     noop: function() {
       return void 0;
     },
 
+
+    /**
+     * return noop as function.
+     * @function
+     * @memberof Longo.Utils
+     * @static
+     * @return {Function} Longo.Utils.noop
+     */
     asNoop: function() {
       return Utils.noop;
     },
 
+    /**
+     * Alias for `Array.prototype.slice.apply`.
+     * @function
+     * @memberof Longo.Utils
+     * @static
+     * @param {Object} arguments argument object
+     * @return {Array} result
+     */
     aSlice: function(obj) {
       return Array.prototype.slice.apply(obj);
     },
 
+    /**
+     * return input as Array.
+     * @function
+     * @memberof Longo.Utils
+     * @static
+     * @param {Object} val
+     * @return {Array} result
+     */
     toArray: function(obj) {
       return _.isArray(obj) ? obj : [obj];
     },
 
+    /**
+     * return true if input is not `null` or `undefined`.
+     * @function
+     * @memberof Longo.Utils
+     * @static
+     * @param {Object} val
+     * @return {Boolean} result
+     */
     existy: function(val) {
       return val !== null && val !== undefined;
     },
 
+    /**
+     * return true if input is not `null` or `undefined` or `false`<br>
+     * `0`, `-1`, `""` is detected as truthy
+     * @function
+     * @memberof Longo.Utils
+     * @static
+     * @param {Object} val
+     * @return {Boolean} result
+     */
     truthy: function(val) {
       return (val !== false) && Utils.existy(val);
     },
 
+    /**
+     * return true if input is the `true`
+     * @function
+     * @memberof Longo.Utils
+     * @static
+     * @param {Object} val
+     * @return {Boolean} result
+     */
     isTrue: function(val) {
       return val === true;
     },
 
+    /**
+     * return true if input is the `false`
+     * @function
+     * @memberof Longo.Utils
+     * @static
+     * @param {Object} val
+     * @return {Boolean} result
+     */
     isFalse: function(val) {
       return val === false;
     },
 
+    /**
+     * return true if input is less than 0
+     * @function
+     * @memberof Longo.Utils
+     * @static
+     * @param {Object} val
+     * @return {Boolean} result
+     */
     isNegativeNum: function(val) {
       return _.isNumber(val) && val < 0;
     },
 
+    /**
+     * return true if input is the 0
+     * @function
+     * @memberof Longo.Utils
+     * @static
+     * @param {Object} val
+     * @return {Boolean} result
+     */
     isZero: function(val) {
       return val === 0;
     },
 
+    /**
+     * return true if input is the 1
+     * @function
+     * @memberof Longo.Utils
+     * @static
+     * @param {Object} val
+     * @return {Boolean} result
+     */
     isOne: function(val) {
       return val === 1;
     },
 
+    /**
+     * return true if input is greater than 0
+     * @function
+     * @memberof Longo.Utils
+     * @static
+     * @param {Object} val
+     * @return {Boolean} result
+     */
     isPositiveNum: function(val) {
       return _.isNumber(val) && val > 0;
     },
 
+    /**
+     * execute action with values when condition is truthy
+     * @function
+     * @memberof Longo.Utils
+     * @static
+     * @param {Boolean} cond
+     * @param {Function} action
+     * @param {Array} values
+     * @param {Object} context
+     * @return {Any} result
+     */
     doWhen: function(cond, action, values, context) {
       var arr = Utils.toArray(values);
       if (Utils.truthy(cond))
@@ -319,6 +485,18 @@
         return Utils.noop();
     },
 
+    /**
+     * execute action with values when condition is truthy else execute alternative
+     * @function
+     * @memberof Longo.Utils
+     * @static
+     * @param {Boolean} cond
+     * @param {Function} action
+     * @param {Function} alternative
+     * @param {Array} values
+     * @param {Object} context
+     * @return {Any} result
+     */
     doWhenOrElse: function(cond, action, alternative, values, context) {
       var arr = Utils.toArray(values);
       if (Utils.truthy(cond))
@@ -327,45 +505,102 @@
         return alternative.apply(context, arr);
     },
 
+    /**
+     * return input if input is existy else return els
+     * @function
+     * @memberof Longo.Utils
+     * @static
+     * @param {Object} val
+     * @param {Object} els
+     * @return {Any} result
+     */
     getOrElse: function(val, els) {
-      return val ? val : els;
+      return Utils.existy(val) ? val : els;
     },
 
-    checkOrElse: function(val, els, condition) {
-      return condition(val) ? val : els;
+    /**
+     * return val if result of input has been evaluated by predictor is truthy else return els
+     * @function
+     * @memberof Longo.Utils
+     * @static
+     * @param {Object} val
+     * @param {Object} els
+     * @param {Function} pred predictor
+     * @return {Any} result
+     */
+    checkOrElse: function(val, els, pred) {
+      return Utils.truthy(pred(val)) ? val : els;
     },
 
+    /**
+     * Try parse string to JSON object
+     * @function
+     * @memberof Longo.Utils
+     * @static
+     * @param {String} str JSON formated string
+     * @return {Array} result A Tuple `[error, parsed]`
+     */
     tryParseJSON: function(str) {
-      var ret = [null, null];
+      var result = [null, null];
       try {
-        ret[1] = JSON.parse(str);
+        result[1] = JSON.parse(str);
       } catch (e) {
-        ret[0] = new Longo.Error(Error.PARSE_ERROR, "Failed to parse: " + str, e.stack);
+        result[0] = new Longo.Error(Error.PARSE_ERROR, "Failed to parse: " + str, e.stack);
       }
-      return ret;
+      return result;
     },
 
+    /**
+     * Parse id to `Date` object
+     * @function
+     * @memberof Longo.Utils
+     * @static
+     * @param {String} id start with timestamp
+     * @return {Date} result
+     */
     dataFromId: function(id){
       return new Date(Number(id.substr(0,13)));
     }
-
   };
 
-  var EventEmitter;
+  Utils.inherits(Longo.Error, Error);
+
+  /**
+   * Longo use dom based EventEmitter by default.<br>
+   * For better performance, please use Wolfy87's EventEmitter implementation.<br>
+   * @see https://github.com/Wolfy87/EventEmitter
+   * @class EventEmitter
+   */
+  var EventEmitter = Longo.EventEmitter;
   if (!wnd.EventEmitter){
     // Inner Classes
     EventEmitter = function() {
       this.dom = wnd.document.createDocumentFragment();
     };
-    // https://developer.mozilla.org/en-US/docs/Web/API/EventTarget.addEventListener
+
+    /**
+     * @method
+     * @memberof EventEmitter
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/EventTarget.addEventListener
+     */
     EventEmitter.prototype.addEventListener = function() {
       this.dom.addEventListener.apply(this.dom, Longo.Utils.aSlice(arguments));
     };
-    // https://developer.mozilla.org/en-US/docs/Web/API/EventTarget.removeEventListener
+
+    /**
+     * @method
+     * @memberof EventEmitter
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/EventTarget.removeEventListener
+     */
     EventEmitter.prototype.removeEventListener = function() {
       this.dom.removeEventListener.apply(this.dom, Longo.Utils.aSlice(arguments));
     };
-    // https://developer.mozilla.org/en-US/docs/Web/API/EventTarget.dispatchEvent
+
+    /**
+     * @method
+     * @memberof EventEmitter
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/EventTarget.dispatchEvent
+     */
     EventEmitter.prototype.dispatchEvent = function() {
       var args = Longo.Utils.aSlice(arguments),
         ev = args[0];
@@ -378,14 +613,45 @@
       this.dom.dispatchEvent.apply(this.dom, args);
     };
     // alias
+
+    /**
+     * Alias for EventEmitter.addEventListener
+     * @method
+     * @memberof EventEmitter
+     */
     EventEmitter.prototype.on = EventEmitter.prototype.addEventListener;
+    /**
+     * Alias for EventEmitter.addEventListener
+     * @method
+     * @memberof EventEmitter
+     */
     EventEmitter.prototype.bind = EventEmitter.prototype.addEventListener;
+    /**
+     * Alias for EventEmitter.removeEventListener
+     * @method
+     * @memberof EventEmitter
+     */
     EventEmitter.prototype.off = EventEmitter.prototype.removeEventListener;
+    /**
+     * Alias for EventEmitter.removeEventListener
+     * @method
+     * @memberof EventEmitter
+     */
     EventEmitter.prototype.unbind = EventEmitter.prototype.removeEventListener;
+    /**
+     * Alias for EventEmitter.dispatchEvent
+     * @method
+     * @memberof EventEmitter
+     */
     EventEmitter.prototype.emit = EventEmitter.prototype.dispatchEvent;
+    /**
+     * Alias for EventEmitter.dispatchEvent
+     * @method
+     * @memberof EventEmitter
+     */
     EventEmitter.prototype.trigger = EventEmitter.prototype.dispatchEvent;
 
-    console.warn(["[INFO]:EventEmitter is not imported.",
+    console.warn(["[WARN]:EventEmitter is not imported.",
                  "Longo use dom based EventEmitter by default.",
                  "For better performance, please use Wolfy87's EventEmitter implementation.",
                  "https://github.com/Wolfy87/EventEmitter"].join(" "));
@@ -395,28 +661,43 @@
 
 
   /**
-   * Database
-   * @name Longo.DB
-   * @class Create DB object with specified name
+   * Database instance<br>
+   * Do not call this class with `new` from application
+   * @name DB
+   * @class Create DB instance with specified name
    * @param {String} name name of this database
-   * @inherits EventEmitter
+   * @constructs
+   * @private
+   * @extends EventEmitter
+   * @example
+   *   var db = Longo.createDB("test");
    */
-  var DB = Longo.DB = function(name) {
+  var DB = function(name) {
     EventEmitter.call(this);
     this.name = name;
     this.lastError = null;
     this.collections = {};
-    this.logger = Longo.Utils.createLogger("Longo." + name);
+    this.logger = Longo.Utils.createLogger("Longo." + name, Longo.LOGLEVEL);
   };
   Longo.Utils.inherits(DB, EventEmitter);
 
   /**
-   * @scope Longo.DB.prototype
+   * return array of collection names
+   * @method
+   * @memberof DB
+   * @return {Array} names names of this db collctions
    */
   DB.prototype.getCollectionNames = function() {
     return _.keys(this.collections);
   };
 
+  /**
+   * return collection instance
+   * @method
+   * @memberof DB
+   * @param {String} name
+   * @return {Collection} collection
+   */
   DB.prototype.getCollection = function(name) {
     return this.collections[name];
   };
@@ -483,8 +764,26 @@
     }
   };
 
-
-  function Collection(name, opt, db) {
+  /**
+   * Collection instance<br>
+   * Do not call this class with `new` from application.<br>
+   * use `db.createCollection` or `db.collection`
+   * @name Collection
+   * @class Create collection instance with specified name
+   * @param {String} name name of this collection
+   * @param {Object} [option] config for caped collection
+   * @param {Boolean} [option.capped = false] if true, this collection will be capped
+   * @param {Number} [option.size = 1024*1024] Max size of this collection
+   * @param {Number} [option.count = 1000] Max count of this collection.
+   * @param {DB} parent database instance
+   * @constructs
+   * @private
+   * @extends EventEmitter
+   * @example
+   *   var db = Longo.createDB("test");
+   *   db.createCollection("score");
+   */
+  var Collection = function(name, opt, db) {
     EventEmitter.call(this);
     var self = this;
     this.name = name;
@@ -494,7 +793,7 @@
       "count": opt.count || 1000
     };
     this.db     = db;
-    this.logger = Utils.createLogger("Longo." + db.name + "." + this.name);
+    this.logger = Utils.createLogger("Longo." + this.db.name + "." + this.name, Longo.LOGLEVEL);
     this.cbs = {
       "-1": function(error){
         self.logger.error([
@@ -512,7 +811,7 @@
     worker.addEventListener("message", this.onMessage(), false);
     worker.addEventListener("error", this.onError(), false);
     this.status = Status.STARTED;
-  }
+  };
   Utils.inherits(Collection, EventEmitter);
 
   Collection.prototype.setDefaultErrorHandler = function(func){
@@ -523,6 +822,7 @@
     var self = this;
     return function(e){
       var response, data, seq, error, result;
+      self.logger.info("Response Received");
 
       response = Utils.tryParseJSON(Utils.ab2str(e.data));
       if (response[0]) {
@@ -540,16 +840,17 @@
         self.db.lastError = error;
         self.db.emit("error", error);
         self.emit("error", error);
-        self.logger.error("ERROR:Failed at worker", Longo.ErrorCds[error]);
+        self.logger.error("ERROR:Failed at worker", error);
       }
+
       if (data.isUpdated){
         _.each(_.values(self.observers), function(ob){
           self.send(ob.message, ob.func, false);
         });
+        self.emit("updated");
       }
-
+      self.logger.info("Trigger callback: ", self.name+":"+seq);
       Utils.doWhen(_.isFunction(self.cbs[seq]), self.cbs[seq], [error, result]);
-      if (data.isUpdated) self.emit("updated", error);
     };
   };
 
@@ -607,12 +908,14 @@
     // http://updates.html5rocks.com/2011/12/Transferable-Objects-Lightning-Fast
     bytes = Utils.str2ab(json);
     this.worker.postMessage(bytes, [bytes.buffer]);
+    this.logger.info("New operation called: " + this.name + ":" + seq);
 
     if (observe){
       this.observers[seq] = {
         "message":message,
         "func":callbackFunc,
       };
+      this.logger.info("New observer registerd: " + this.name + ":" + seq);
     }
 
     return this.name + ":" + seq;
@@ -750,7 +1053,7 @@
     this.db.collections[name] = this;
     delete this.db.collections[this.name];
     this.name = name;
-    this.logger = Utils.createLogger("Longo." + this.db.name + "." + this.name);
+    this.logger = Utils.createLogger("Longo." + this.db.name + "." + this.name, Longo.LOGLEVEL);
   };
 
 
@@ -800,7 +1103,7 @@
       _.contains(_.keys(this.cmds), "update"),
       _.contains(_.keys(this.cmds), "drop")
     ])){
-      this.collection.logger.log("WARN:`onValue` is not supported for 'save','insert','remove','update','drop'. call `done` instead.");
+      this.collection.logger.warn("WARN:`onValue` is not supported for 'save','insert','remove','update','drop'. call `done` instead.");
       return this.done(cb);
     }
 
@@ -936,6 +1239,99 @@
     };
     return new Cursor(this, cmd);
   };
+
+
+  /**
+   * return version of Longo module
+   * @name Longo.getVersion
+   * @function
+   * @memberof Longo
+   * @public
+   */
+  Longo.getVersion = function() {
+    return Longo.VERSION;
+  };
+
+  /**
+   * Set rootPath for longo modules<br>
+   * This method will be called when window `load` event fired.
+   *
+   * @method setRoot
+   * @memberof Longo
+   * @public
+   * @param {String} root Abstruct path of longo root
+   * @example
+   * Longo.setRoot("/javascript/vender/longo");
+   */
+  Longo.setRoot = function(root){
+    if (_.isUndefined(root) || root instanceof wnd.Event) {
+      root = "/Longo.js";
+      var scripts = wnd.document.getElementsByTagName("script");
+      var i = scripts.length;
+      while (i--) {
+        var match = scripts[i].src.match(/(^|.*)\/longo(\.min){0,}\.js$/);
+        if (match) {
+          root = match[1];
+          if(match[2]) Longo.WORKERJS = "longoWorker.min.js";
+          break;
+        }
+      }
+    }
+    if (Longo.LONGOROOT !== root) console.info("LONGOROOT is setted :" + root);
+    Longo.LONGOROOT = root;
+  };
+  wnd.addEventListener("load", Longo.setRoot, false);
+
+  /**
+   * Force to use minified longoWorker module.
+   * @method useMinified
+   * @memberof Longo
+   * @public
+   */
+  Longo.useMinified = function(){
+    Longo.WORKERJS = "longoWorker.min.js";
+  };
+
+  /**
+   * set logging level.
+   * @method setLogLevel
+   * @memberof Longo
+   * @public
+   * @param {string} loglevel `log`,`debug`,`info`,`warn`,`error`
+   */
+  Longo.setLogLevel = function(level){
+    Longo.LOGLEVEL = level;
+  };
+
+  /**
+   * return database instance
+   * @name Longo.createDB
+   * @function
+   * @memberof Longo
+   * @public
+   * @param {String} name database name
+   * @return {DB}
+   */
+  Longo.createDB = (function() {
+    var dbs = {};
+    return function(name){
+      var db;
+      if (_.has(dbs, name)) return dbs[name];
+      db = new DB(name);
+      dbs[name] = db;
+      return db;
+    };
+  })();
+
+  /**
+   * alias for Longo.createDB
+   * @name Longo.use
+   * @function
+   * @memberof Longo
+   * @param {String} name database name
+   * @return {DB}
+   */
+  Longo.use = Longo.createDB;
 
   global.Longo = Longo;
 
