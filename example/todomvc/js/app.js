@@ -21,6 +21,13 @@ jQuery(function ($) {
 			this.cacheElements();
 			this.bindEvents();
 
+			this.allTodoCount       = 0;
+			this.completedTodoCount = 0;
+			this.activeTodoCount    = 0;
+			this.allTodos           = [];
+			this.completedTodos     = [];
+			this.activeTodos        = [];
+
 			Longo.setRoot();
 			this.db = new Longo.use("todos-longo");
 			this.db.collection("tasks").find({}).sort({"_id":1}).onValue(function(error, results){

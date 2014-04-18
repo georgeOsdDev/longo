@@ -651,10 +651,12 @@
      */
     EventEmitter.prototype.trigger = EventEmitter.prototype.dispatchEvent;
 
-    console.warn(["[WARN]:EventEmitter is not imported.",
+    if(wnd.console && wnd.console.warn) {
+      wnd.console.warn(["[WARN]:EventEmitter is not imported.",
                  "Longo use dom based EventEmitter by default.",
                  "For better performance, please use Wolfy87's EventEmitter implementation.",
                  "https://github.com/Wolfy87/EventEmitter"].join(" "));
+    }
   } else {
     EventEmitter = wnd.EventEmitter;
   }
