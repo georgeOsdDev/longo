@@ -22,7 +22,8 @@ self.logger = function(obj, method){
   // console in WebWorker thread does not accept more than one arguments
   // eg. console.log(1,2,3); -> console display just only `1`
   // So use JSON
-  if (console && console[loglevel]) console[loglevel].call(console, JSON.stringify(msg));
+  var _console = console || undefined;
+  if (typeof _console !== undefined && _console[loglevel]) _console[loglevel].call(_console, JSON.stringify(msg));
 };
 
 
