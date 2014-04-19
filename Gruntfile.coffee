@@ -21,8 +21,8 @@ module.exports = (grunt) ->
                    * <%= pkg.name %> v-<%= pkg.version %>
                    * Source code can be found at <%= pkg.homepage %>
                    *
-                   * license   The MIT License (MIT)
-                   * copyright Copyright (c) 2014 <%= pkg.author %>
+                   * The MIT License (MIT)
+                   * Copyright (c) 2014 <%= pkg.author %>
                    */
 
                   """

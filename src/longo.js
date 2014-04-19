@@ -1,8 +1,8 @@
 /*
  * @project Longo.js
- * @module Longo
+ * @module longo
  * @desc Asynchronous local database with a flavor of FRP.
- * @requires underscore.js
+ * @requires {@linkplain http://underscorejs.org/|underscore}
  * @example
  * &lt;script type="text/javascript" src="path/to/Longo.js/lib/underscore-min.js"&gt;&lt;/script&gt;
  * &lt;script type="text/javascript" src="path/to/Longo.js/longo.js"&gt;&lt;/script&gt;
@@ -36,21 +36,23 @@
   Longo.VERSION = "0.1.0";
 
   /**
+   * The root path for Longo components
    * This value is automatically updated on window onload event.<br>
    * If you want to access DB object before window onload, <br>
    * be sure that set correct path with `setRoot`.
-   *
+   * @see Longo.setRoot
    * @memberof Longo
-   * @constant
    * @type {String}
    * @default "/Longo.js"
+   *
    */
   Longo.LONGOROOT = "/Longo.js";
 
   /**
-   * If you are using longo.min.js, this value will be replaced with `longoWorker.min.js`
+   * If you are using longo.min.js,<br>
+   * this value will be automatically replaced with `longoWorker.min.js`
+   * @see Longo.useMinified
    *
-   * @constant
    * @memberof Longo
    * @type {String}
    * @default "longoWorker.js"
@@ -58,9 +60,8 @@
   Longo.WORKERJS  = "longoWorker.js";
 
   /**
-   * LogLevel
-   *
-   * @constant
+   * You can change this value with `debug`,`info`,`warn`,`error`.
+   * @see Longo.setLogLevel
    * @memberof Longo
    * @type {String}
    * @default "warn"
@@ -117,6 +118,10 @@
     this.message = message;
     this.stack = stack || (new Error().stack);
   };
+
+  function parseError(obj){
+    return new Longo.Error(obj.code, obj.message, obj.stack);
+  }
 
   /**
    * UNEXPECTED_ERROR
@@ -201,7 +206,8 @@
 
 
   /**
-   * Utility methods of Longo
+   * Utility methods of Longo.<br>
+   * These methods are also available from application.
    * @namespace
    * @name Longo.Utils
    * @memberof Longo
@@ -661,23 +667,23 @@
     EventEmitter = wnd.EventEmitter;
   }
 
-
   /**
-   * Database instance<br>
-   * Do not call this class with `new` from application
-   * @name DB
-   * @class Create DB instance with specified name
+   * Return Database instance.<br>
+   * It is better to create database instance with {@link Longo.createDB} instead of `new` keyword.
+   * @name Longo.DB
+   * @class Database object
    * @param {String} name name of this database
    * @constructs
    * @private
    * @extends EventEmitter
    * @example
-   *   var db = Longo.createDB("test");
+   * var db = Longo.createDB("test");
    */
-  var DB = function(name) {
+  var DB = Longo.DB = function(name) {
     EventEmitter.call(this);
     this.name = name;
     this.lastError = null;
+    this.currentOpId = null;
     this.collections = {};
     this.logger = Longo.Utils.createLogger("Longo." + name, Longo.LOGLEVEL);
   };
@@ -686,84 +692,187 @@
   /**
    * return array of collection names
    * @method
-   * @memberof DB
-   * @return {Array} names names of this db collctions
+   * @memberof Longo.DB
+   * @return {Array} names An array containing all collections in the existing database
    */
-  DB.prototype.getCollectionNames = function() {
+  Longo.DB.prototype.getCollectionNames = function() {
     return _.keys(this.collections);
   };
 
   /**
-   * return collection instance
+   * Returns a {@link Collection}
    * @method
-   * @memberof DB
-   * @param {String} name
-   * @return {Collection} collection
+   * @memberof Longo.DB
+   * @param {String} name The name of the collection
+   * @return {Collection}
    */
-  DB.prototype.getCollection = function(name) {
-    return this.collections[name];
+  Longo.DB.prototype.getCollection = function(name) {
+    return this.collections[name] || this.collection(name);
   };
 
-  DB.prototype.collection = function(name) {
+  /**
+   * Creates a new {@link Collection} explicitly<br>
+   * Because Longo creates a collection implicitly when the collection is first referenced in a command<br>
+   * this method is used primarily for creating new capped collections.<br>
+   * @method
+   * @memberof Longo.DB
+   * @param {String}  [name='temp'] The name of the collection to create.
+   * @param {Object}  [option] Configuration options for creating a capped collection.
+   * @param {Boolean} [option.capped = false] Enables a capped collection. To create a capped collection, specify true.
+   *                                          If you specify true, you must also set a maximum size in the size field.
+   * @param {Number}  [option.size = 1024*1024] Specifies a maximum size in bytes for a capped collection.
+   *                                            The size field is required for capped collections.
+   *                                            If capped is false, you can use this field will be ignored.
+   * @param {Number}  [option.max = 1000] The maximum number of documents allowed in the capped collection.
+   *                                      The size limit takes precedence over this limit.
+   *                                      If a capped collection reaches its maximum size before it reaches the maximum number of documents,
+   *                                      Longo removes old documents.
+   *                                      If you prefer to use this limit, ensure that the size limit, which is required,
+   *                                      is sufficient to contain the documents limit.
+   *                                      If capped is false, you can use this field will be ignored.
+   * @return {Collection} collection
+   */
+  Longo.DB.prototype.createCollection = function(name, option) {
+    return this._createCollectionWithData(name, option);
+  };
+
+  /**
+   * @private
+   */
+  Longo.DB.prototype._createCollectionWithData = function(name, option, dataset) {
+    var cname = Utils.getOrElse(name, "temp") + "";
+    var coll = new Collection(cname, option, this);
+    coll.initialize(dataset);
+    this.collections[cname] = coll;
+    return coll;
+  };
+
+  /**
+   * Return {@link Collection} instance<br>
+   * You can use this method as a start of cursor function chain.<br>
+   * If specified name of collection is not exist, Longo create new {@link Collection}.<br>
+   * And when new collection is created,<br>
+   * Longo search parsistant data from LocalStorage and initialize with that data.<br>
+   *
+   * @method
+   * @memberof Longo.DB
+   * @param {String} [name='temp'] The name of the collection to create.
+   * @example
+   *   var db = Longo.use("School");
+   *   db.collection("students").save([{"name":"longo"},{"name":"mongo"},{"name":"underscore"}).done();
+   *   db.collection("students").find({}).sort({"name":1}).limit(1).done();
+   *
+   */
+  Longo.DB.prototype.collection = function(name) {
     var cname, lastData, initData;
 
     cname = Utils.getOrElse(name, "temp") + "";
     if (this.collections[cname]) return this.collections[cname];
     lastData = JSON.parse(localStorage.getItem("Longo:" + this.name + ":" + cname));
     initData = Utils.toArray(Utils.getOrElse(lastData, []));
-    return this.createCollection(name, {}, initData);
-  };
-
-  DB.prototype.createCollection = function(name, option, data) {
-    var cname = Utils.getOrElse(name, "temp") + "";
-    var coll = new Collection(cname, option, this);
-    coll.initialize(data);
-    this.collections[cname] = coll;
-    return coll;
-  };
-
-  DB.prototype.dropDatabase = function() {
-    _.each(_.values(this.collections), function(coll) {
-      coll.drop().done();
-    });
-  };
-
-  DB.prototype.getLastError = function() {
-    return this.lastError;
+    return this._createCollectionWithData(name, {}, initData);
   };
 
   /**
-   * cloneCollection from
-   * @param  {String}   from     from collection
-   * @param  {String}   name     name of cloned collection
-   * @param  {Object}   criteria criteria for finding documents from collection
-   * @param  {Function} done                 collback
-   *   @param {Number} [done.error]          error
-   *   @param {Collection} [done.collection] cloned collection
-   * @return {String}   opId                 id of this action
+   * Removes the current database.
+   * @method
+   * @memberof Longo.DB
    */
-  DB.prototype.cloneCollection = function(from, name, criteria, done) {
-    var cname = Utils.getOrElse(name, "temp") + "";
+  Longo.DB.prototype.dropDatabase = function() {
+    _.each(_.values(this.collections), function(coll) {
+      coll.drop().done();
+    });
 
-    if (!this.collections[cname]) return done(Longo.Error.COLLECTION_ALREADY_EXISTS, null);
+  };
+
+
+  /**
+   * Callback structure for {@link Longo.DB#cloneCollection}
+   * @callback Longo.DB.cloneCollectionCallback
+   * @param {Longo.Error} [error=null]      null when success
+   * @param {Collection}  [collection=null] null when fail
+   */
+
+  /**
+   * Create clone from existing {@link Collection}
+   * @method
+   * @memberof Longo.DB
+   * @param  {String}   from          Collection name of Collection instance that holds dataset to copy.
+   * @param  {String}   [name='temp'] Collection name that you want to clone.
+   * @param  {Object}   [query={}]    A standard query document that limits the documents copied as part of the db.cloneCollection() operation.
+   *                             All query selectors available to the find() are available here.
+   * @param  {cloneCollectionCallback} [done=null] callback for result. See {@link Longo.DB.cloneCollectionCallback}
+   * @return {String}   opId     id of this action
+   */
+  Longo.DB.prototype.cloneCollection = function(from, name, criteria, done) {
+    var cname = Utils.getOrElse(name, "temp") + "";
+    if (!_.isFunction(done)) done = Utils.noop;
+
+    if (!this.collections[cname]) return done(new Longo.Error(Longo.Error.COLLECTION_ALREADY_EXISTS, "Collection is already exists! name: "+cname, null), null);
 
     if (!this.collections[from]) return done(null, this.createCollection(cname));
 
     var cloneCb = function(error, data) {
-      if (error) return done(error, null);
-      return done(null, this.createCollection(name, {}, data));
+      if (Utils.existy(error)) return done(error, null);
+      return done(null, this._createCollectionWithData(name, {}, data));
     };
 
     this.collection(from).find(criteria, {}).done(cloneCb);
   };
 
-  // killOp is not kill operation but just delete callback
-  DB.prototype.killOp = function(opId) {
+  /**
+   * The db.currentOp() method can take no arguments, and it return just opId unlike MongoDB's currentOp
+   * @method
+   * @memberof Longo.DB
+   * @return {String} currentOpId A last opId of this database instance.
+   */
+  Longo.DB.prototype.currentOp = function() {
+    return this.currentOpId;
+  };
+
+  /**
+   * Return last error message of this database instance
+   * @method
+   * @memberof Longo.DB
+   * @return {String} lastError The last error message string
+   */
+  Longo.DB.prototype.getLastError = function() {
+    return this.lastError.message;
+  };
+
+  /**
+   * Return last error object of this database instance
+   * @method
+   * @memberof Longo.DB
+   * @return {Error} lastError A full document with status information
+   */
+  Longo.DB.prototype.getLastErrorObj = function() {
+    return this.lastError;
+  };
+
+  /**
+   * Terminates an operation as specified by the operation ID.<br>
+   * To find operations and their corresponding IDs, See {@link Longo.DB#currentOp}
+   * @method
+   * @memberof Longo.DB
+   * @param {String} opId current opperation ID
+   */
+  Longo.DB.prototype.killOp = function(opId) {
     var tokens = opId.split[":"];
     if (this.collections[tokens[0]]) {
       delete this.collections[tokens[0]].cbs[[1]];
       delete this.collections[tokens[0]].observers[[1]];
     }
+  };
+
+  /**
+   * Return the current database name.
+   * @method
+   * @memberof Longo.DB
+   * @return {Error} name The current database name
+   */
+  Longo.DB.prototype.getName = function() {
+    return this.name;
   };
 
   /**
@@ -792,7 +901,7 @@
     this.option = {
       "capped": opt.capped || false,
       "size": opt.size || 1024 * 1024,
-      "count": opt.count || 1000
+      "max": opt.max || 1000
     };
     this.db     = db;
     this.logger = Utils.createLogger("Longo." + this.db.name + "." + this.name, Longo.LOGLEVEL);
@@ -827,18 +936,19 @@
       self.logger.info("Response Received");
 
       response = Utils.tryParseJSON(Utils.ab2str(e.data));
-      if (response[0]) {
-        self.db.lastError = response[0];
-        self.db.emit("error", response[0]);
-        self.emit("error", response[0]);
-        return self.logger.error("ERROR:Failed to parse WebWorker message", Longo.ErrorCds[response[0]]);
+      if (Utils.existy(response[0])) {
+        error = parseError(response[0]);
+        self.db.lastError = error;
+        self.db.emit("error", error);
+        self.emit("error", error);
+        return self.logger.error("ERROR:Failed to parse WebWorker message", Longo.ErrorCds[error.code]);
       }
       data   = response[1] || {};
       seq    = data.seq || "-1";
-      error  = data.error || null;
       result = data.result;
 
-      if (error) {
+      if (Utils.existy(data.error)) {
+        error = parseError(data.error);
         self.db.lastError = error;
         self.db.emit("error", error);
         self.emit("error", error);
@@ -852,17 +962,18 @@
         self.emit("updated");
       }
       self.logger.info("Trigger callback: ", self.name+":"+seq);
-      Utils.doWhen(_.isFunction(self.cbs[seq]), self.cbs[seq], [error, result]);
+      Utils.doWhen(_.isFunction(self.cbs[seq]), self.cbs[seq], [null, result]);
     };
   };
 
   Collection.prototype.onError = function() {
     var self = this;
     return function(e){
+      if (!Utils.existy(e.code)) e.code = Longo.Error.WEBWORKER_ERROR;
       self.db.lastError = e;
       self.db.emit("error", e);
       self.emit("error", e);
-      self.logger.error(["Error:Unexpected error!  Line ", e.lineno, " in ", e.filename, ": ", e.message].join(""));
+      self.logger.error(["Error:WebWorker Error!  Line ", e.lineno, " in ", e.filename, ": ", e.message].join(""));
       return self.cbs["-1"](e);
     };
   };
@@ -896,7 +1007,7 @@
   };
 
   Collection.prototype.send = function(message, cb, observe) {
-    var seq, callbackFunc, json, bytes;
+    var seq, callbackFunc, json, bytes, opId;
     callbackFunc = Utils.checkOrElse(cb, Utils.noop, _.isFunction);
 
     if (this.status !== Status.STARTED) return callbackFunc(Longo.Error.COLLECTION_NOT_STARTED, null);
@@ -920,7 +1031,9 @@
       this.logger.info("New observer registerd: " + this.name + ":" + seq);
     }
 
-    return this.name + ":" + seq;
+    opId = this.name + ":" + seq;
+    this.db.currentOpId = opId;
+    return opId;
   };
 
   Collection.prototype.find = function(criteria, projection) {
@@ -1020,6 +1133,7 @@
     this.cbs = {};
     this.observers = {};
     delete this.db.collections[this.name];
+    localStorage.setItem("Longo:" + this.db.name + ":" + this.name, []);
   };
 
   Collection.prototype.count = function() {
@@ -1244,7 +1358,7 @@
 
 
   /**
-   * return version of Longo module
+   * Return version of Longo module
    * @name Longo.getVersion
    * @function
    * @memberof Longo
@@ -1258,7 +1372,7 @@
    * Set rootPath for longo modules<br>
    * This method will be called when window `load` event fired.
    *
-   * @method setRoot
+   * @function
    * @memberof Longo
    * @public
    * @param {String} root Abstruct path of longo root
@@ -1286,7 +1400,7 @@
 
   /**
    * Force to use minified longoWorker module.
-   * @method useMinified
+   * @function
    * @memberof Longo
    * @public
    */
@@ -1295,8 +1409,8 @@
   };
 
   /**
-   * set logging level.
-   * @method setLogLevel
+   * Set logging level.
+   * @function
    * @memberof Longo
    * @public
    * @param {string} loglevel `log`,`debug`,`info`,`warn`,`error`
@@ -1306,32 +1420,37 @@
   };
 
   /**
-   * return database instance
+   * Return new database instance.<br>
+   * If sepcifyed name database is already exists, return that database.
    * @name Longo.createDB
    * @function
    * @memberof Longo
    * @public
-   * @param {String} name database name
-   * @return {DB}
+   * @param {String} [name='temp'] database name
+   * @return {DB} db
    */
   Longo.createDB = (function() {
     var dbs = {};
     return function(name){
+      var dname = Utils.getOrElse(name, "temp") + "";
       var db;
-      if (_.has(dbs, name)) return dbs[name];
-      db = new DB(name);
-      dbs[name] = db;
+      if (_.has(dbs, dname)) return dbs[dname];
+      db = new DB(dname);
+      dbs[dname] = db;
       return db;
     };
   })();
 
   /**
-   * alias for Longo.createDB
+   * Alias for Longo.createDB().
    * @name Longo.use
    * @function
    * @memberof Longo
    * @param {String} name database name
-   * @return {DB}
+   * @return {DB} db
+   * @example
+   * var db = Longo.use("School");
+   * db.collection("students").insert({name:"tome",score:100}).done();
    */
   Longo.use = Longo.createDB;
 

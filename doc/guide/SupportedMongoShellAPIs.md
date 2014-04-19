@@ -8,53 +8,53 @@ Except non-CRUD operation like Sharding, Replication, Auth, etcetra are not supp
 
 ##Database APIs
 
-|method                      | supported | inpremented |
-|----------------------------|:---------:|:-----------:|
-|db.addUser                  | no        | -           |
-|db.auth                     | no        | -           |
-|db.changeUserPassword       | no        | -           |
-|db.cloneCollection          | yes       | yes         |
-|db.cloneDatabase            | no        | -           |
-|db.commandHelp              | no        | -           |
-|db.copyDatabase             | no        | -           |
-|db.createCollection         | yes       | yes         |
-|db.currentOp                | yes       | yes         |
-|db.dropDatabase             | yes       | yes         |
-|db.eval                     | no        | -           |
-|db.fsyncLock                | no        | -           |
-|db.fsyncUnlock              | no        | -           |
-|db.getCollection            | yes       | yes         |
-|db.getCollectionNames       | yes       | yes         |
-|db.getLastError             | yes       | yes         |
-|db.getLastErrorObj          | no        | -           |
-|db.getMongo                 | no        | -           |
-|db.getName                  | yes       | yes         |
-|db.getPrevError             | no        | -           |
-|db.getProfilingLevel        | no        | -           |
-|db.getProfilingStatus       | no        | -           |
-|db.getReplicationInfo       | no        | -           |
-|db.getSiblingDB             | no        | -           |
-|db.help                     | no        | -           |
-|db.hostInfo                 | no        | -           |
-|db.isMaster                 | no        | -           |
-|db.killOp                   | yes       | yes         |
-|db.listCommands             | no        | -           |
-|db.loadServerScripts        | no        | -           |
-|db.logout                   | no        | -           |
-|db.printCollectionStats     | no        | -           |
-|db.printReplicationInfo     | no        | -           |
-|db.printShardingStatus      | no        | -           |
-|db.printSlaveReplicationInfo| no        | -           |
-|db.removeUser               | no        | -           |
-|db.repairDatabase           | no        | -           |
-|db.resetError               | no        | -           |
-|db.runCommand               | no        | -           |
-|db.serverBuildInfo          | no        | -           |
-|db.serverStatus             | no        | -           |
-|db.setProfilingLevel        | no        | -           |
-|db.shutdownServer           | no        | -           |
-|db.stats                    | no        | -           |
-|db.version                  | yes       | no          |
+|MongoDB Method              | Supported   | Inpremented |
+|----------------------------|:-----------:|:-----------:|
+|db.addUser                  | no          | -           |
+|db.auth                     | no          | -           |
+|db.changeUserPassword       | no          | -           |
+|db.cloneCollection          | yes         | [See API](http://georgeosddev.github.io/longo/doc/DB.html#cloneCollection)         |
+|db.cloneDatabase            | no          | -           |
+|db.commandHelp              | no          | -           |
+|db.copyDatabase             | no          | -           |
+|db.createCollection         | yes         | [See API](http://georgeosddev.github.io/longo/doc/DB.html#createCollection)         |
+|db.currentOp                | yes         | [See API](http://georgeosddev.github.io/longo/doc/DB.html#currentOp)         |
+|db.dropDatabase             | yes         | [See API](http://georgeosddev.github.io/longo/doc/DB.html#dropDatabase)         |
+|db.eval                     | no          | -           |
+|db.fsyncLock                | no          | -           |
+|db.fsyncUnlock              | no          | -           |
+|db.getCollection            | yes         | [See API](http://georgeosddev.github.io/longo/doc/DB.html#getCollection)         |
+|db.getCollectionNames       | yes         | [See API](http://georgeosddev.github.io/longo/doc/DB.html#getCollectionNames)         |
+|db.getLastError             | yes         | [See API](http://georgeosddev.github.io/longo/doc/DB.html#getLastError)         |
+|db.getLastErrorObj          | no          | [See API](http://georgeosddev.github.io/longo/doc/DB.html#getLastErrorObj)         |
+|db.getMongo                 | no          | -           |
+|db.getName                  | yes         | [See API](http://georgeosddev.github.io/longo/doc/DB.html#getName)         |
+|db.getPrevError             | no          | -           |
+|db.getProfilingLevel        | no          | -           |
+|db.getProfilingStatus       | no          | -           |
+|db.getReplicationInfo       | no          | -           |
+|db.getSiblingDB             | no          | -           |
+|db.help                     | no          | -           |
+|db.hostInfo                 | no          | -           |
+|db.isMaster                 | no          | -           |
+|db.killOp                   | yes         | [See API](http://georgeosddev.github.io/longo/doc/DB.html#killOp)         |
+|db.listCommands             | no          | `console.log(Longo.createDB(""));`           |
+|db.loadServerScripts        | no          | -           |
+|db.logout                   | no          | -           |
+|db.printCollectionStats     | no          | -           |
+|db.printReplicationInfo     | no          | -           |
+|db.printShardingStatus      | no          | -           |
+|db.printSlaveReplicationInfo| no          | -           |
+|db.removeUser               | no          | -           |
+|db.repairDatabase           | no          | -           |
+|db.resetError               | no          | -           |
+|db.runCommand               | no          | -           |
+|db.serverBuildInfo          | no          | -           |
+|db.serverStatus             | no          | -           |
+|db.setProfilingLevel        | no          | -           |
+|db.shutdownServer           | no          | -           |
+|db.stats                    | no          | -           |
+|db.version                  | no          | Use [Longo.getVersion](http://georgeosddev.github.io/longo/doc/Longo.html#getVersion)         |
 
 
 ##Collection APIs

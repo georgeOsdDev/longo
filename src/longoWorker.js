@@ -3,6 +3,9 @@
 /**
  * @project Longo.js
  * @module longoWorker
+ * @requires longo
+ * @requires {@linkplain http://underscorejs.org/|underscore}
+ * @requires {@linkplain https://github.com/davidgtonge/underscore-query|underscore-query}
  * @desc This module is work only WebWorker thread.<br>
  *       Longo automatically create worker thread. So user application does not need use this module directory.
  *
