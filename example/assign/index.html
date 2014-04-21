@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+  <head>
+      <meta charset="utf-8">
+      <meta name="description" content="Longo.js example">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>Longo.js example</title>
+      <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+      <link rel="stylesheet" href="style.css">
+      <script src="https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js"></script>
+      <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+      <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js"></script>
+      <script src="./EventEmitter.min.js"></script>
+      <script src="../Longo.js/longo.min.js"></script>
+  </head>
+  <body>
+    <a href="http://www.reactivemanifesto.org/"> <img style="border: 0; position: fixed; right: 0; top:0; z-index: 9000" src="//d379ifj7s9wntv.cloudfront.net/reactivemanifesto/images/ribbons/we-are-reactive-red-right.png"> </a>
+
+    <h2>Assign result dataset to UI</h2>
+    <h3>Code</h3>
+    <div>
+      <pre class="prettyprint">&lt;script type="text/template" id="resultTpl"&gt;
+  &lt;ul&gt;
+  &lt;% if (result && result.length &gt; 0) { %&gt;
+    &lt;% _.each(result, function(data) { %&gt;
+      &lt;li id="&lt;%= data._id %&gt;" style="color:&lt;%= data.color %&gt;;"&gt;
+        &lt;p&gt;
+        &lt;span&gt;| Name: &lt;%= data.name %&gt;&lt;/span&gt;, &lt;span&gt;Value: &lt;%= data.value %&gt;&lt;/span&gt;
+        &lt;/p&gt;
+      &lt;/li&gt;
+    &lt;% }); %&gt;
+  &lt;% } %&gt;
+  &lt;/ul&gt;
+&lt;/script&gt;
+
+&lt;script type="text/javascript"&gt;
+var db = Longo.use("example");
+var tpl = _.template($("#resultTpl").html());
+db.collection("output").find({}).sort({"value":-1}).assign($("#out"), tpl);
+&lt;/script&gt;</pre>
+    </div>
+
+    <h3>Result</h3>
+    <div id="out"></div>
+
+    <h3>Run Query</h3>
+    <button id="eval0">Eval0</button><pre id="query0" class="prettyprint">$("#eval0").on("click", function(e){
+  db.collection("output").save([
+    {"name":"Apple","value":3,"color":"red"},
+    {"name":"Grape","value":5,"color":"purple"},
+    {"name":"Orange","value":1,"color":"orange"}
+  ]).done();
+})</pre>
+    <button id="eval1">Eval1</button><pre id="query1" class="prettyprint">$("#eval1").on("click", function(e){
+  db.collection("output").update({"name":"Apple"},{"name":"Apple","value":3,"color":"green"}).done();
+})</pre>
+    <button id="eval2">Eval2</button><pre id="query2" class="prettyprint">$("#eval2").on("click", function(e){
+  db.collection("output").update({"name":"Orange"},{"$inc":{"value":5}}).done();
+})</pre>
+    <button id="eval3">Eval3</button><pre id="query3" class="prettyprint">$("#eval3").on("click", function(e){
+  db.collection("output").remove({"name":"Grape"}).done();
+})</pre>
+    <button id="eval4">Eval4</button><pre id="query4" class="prettyprint">$("#eval4").on("click", function(e){
+  db.collection("output").insert({"name":"Banana","value":20,"color":"yellow"}).done();
+})</pre>
+
+
+    <script type="text/template" id="resultTpl">
+      <ul>
+      <% if (result && result.length > 0) { %>
+        <% _.each(result, function(data) { %>
+          <li id="<%= data._id %>" style="color:<%= data.color %>;">
+            <p>
+            <span>Name: <%= data.name %></span>, <span>Value: <%= data.value %></span>
+            </p>
+          </li>
+        <% }); %>
+      <% } %>
+      </ul>
+    </script>
+
+    <script type="text/javascript">
+      $(function(){
+        Longo.setRoot("../Longo.js")
+        var db = Longo.use("example");
+        var tpl = _.template($("#resultTpl").html());
+        db.collection("output").find({}).sort({"value":-1}).assign("#out", tpl);
+
+
+        $("#eval0").on("click", function(e){
+          db.collection("output").save([
+            {"name":"Apple","value":3,"color":"red"},
+            {"name":"Grape","value":5,"color":"purple"},
+            {"name":"Orange","value":1,"color":"orange"}
+          ]).done();
+        })
+
+        $("#eval1").on("click", function(e){
+          db.collection("output").update({"name":"Apple"},{"name":"Apple","value":3,"color":"green"}).done();
+        })
+
+        $("#eval2").on("click", function(e){
+          db.collection("output").update({"name":"Orange"},{"$inc":{"value":5}}).done();
+        })
+
+        $("#eval3").on("click", function(e){
+          db.collection("output").remove({"name":"Grape"}).done();
+        })
+
+        $("#eval4").on("click", function(e){
+          db.collection("output").insert({"name":"Banana","value":20,"color":"yellow"}).done();
+        })
+
+        window.db = db;
+      });
+    </script>
+  </body>
+</html>
