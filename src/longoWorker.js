@@ -187,7 +187,6 @@ function updateById(current, doc, seq) {
 
     doc = applyOperator(doc, current);
   }
-
   doc._id = current._id;
   self.dataset = _.reject(self.dataset, function(d){return d._id === current._id;}).concat([doc]);
   self.isUpdatedBySeq[seq] = true;
@@ -206,7 +205,7 @@ function doUpdate(query, update, option, seq) {
     current = hits[0];
     return updateById(current, update, seq);
   } else {
-    if (!option.multi) return updateById(current, update, seq);
+    if (!option.multi) return updateById(hits[0], update, seq);
     if (update._id) return [new Longo.Error(Longo.Error.MOD_ID_NOT_ALLOWED, "_id: "+update._id), null];
 
     var res = [null, null];
