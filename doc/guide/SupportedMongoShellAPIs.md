@@ -100,6 +100,7 @@ Except non-CRUD operation like Sharding, Replication, Auth, etcetra are not supp
 |db.collection.loadFromLocalStorage  | no          |
 |db.collection.persistToServ         | no          |
 |db.collection.persistToLocalStorage | no          |
+|db.collection.setDefaultErrorHandler| yes         |
 
 ##Cursor APIs
 

@@ -876,16 +876,15 @@
   };
 
   /**
-   * Collection instance<br>
    * Do not call this class with `new` from application.<br>
-   * use `db.createCollection` or `db.collection`
-   * @name Collection
-   * @class Create collection instance with specified name
-   * @param {String} name name of this collection
-   * @param {Object} [option] config for caped collection
-   * @param {Boolean} [option.capped = false] if true, this collection will be capped
-   * @param {Number} [option.size = 1024*1024] Max size of this collection
-   * @param {Number} [option.count = 1000] Max count of this collection.
+   * use {@link Longo.DB#createCollection} or {@link Longo.DB#collection} method.
+   * @name Longo.Collection
+   * @class Collection object
+   * @param {String} [name='temp'] name of this collection
+   * @param {Object} [option] config for capped collection
+   * @param {Boolean} [option.capped = false] See {@link Longo.DB#createCollection}
+   * @param {Number} [option.size = 1024*1024] See {@link Longo.DB#createCollection}
+   * @param {Number} [option.max = 1000] See {@link Longo.DB#createCollection}
    * @param {DB} parent database instance
    * @constructs
    * @private
@@ -894,14 +893,15 @@
    *   var db = Longo.createDB("test");
    *   db.createCollection("score");
    */
-  var Collection = function(name, opt, db) {
+  var Collection = Longo.Collection = function(name, opt, db) {
     EventEmitter.call(this);
     var self = this;
     this.name = name;
     this.option = {
       "capped": opt.capped || false,
       "size": opt.size || 1024 * 1024,
-      "max": opt.max || 1000
+      "max": opt.max || 1000,
+      "storeFunction": false
     };
     this.db     = db;
     this.logger = Utils.createLogger("Longo." + this.db.name + "." + this.name, Longo.LOGLEVEL);
@@ -917,7 +917,7 @@
     };
     this.observers = {};
 
-    var worker = this.worker = new Worker(Longo.LONGOROOT + "/" + Longo.WORKERJS);
+    var worker = this.worker = new Worker(Longo.getRoot() + "/" + Longo.WORKERJS);
 
     worker.addEventListener("message", this.onMessage(), false);
     worker.addEventListener("error", this.onError(), false);
@@ -925,6 +925,13 @@
   };
   Utils.inherits(Collection, EventEmitter);
 
+  /**
+   * Set your own error handler.<br>
+   * By default, Longo just log when some error happen.<br>
+   * @method
+   * @memberof Longo.Collection
+   * @param {Function} func your error handler
+   */
   Collection.prototype.setDefaultErrorHandler = function(func){
     this.cbs["-1"] = func;
   };
@@ -1015,6 +1022,11 @@
     seq = this.getNextSeq();
     this.cbs[seq] = callbackFunc;
     message.seq = seq;
+
+    if (this.option.storeFunction) {
+      //http://stackoverflow.com/questions/5264916/convert-javascript-object-incl-functions-to-string
+    }
+
     json = JSON.stringify(message);
 
     // Zero-Copy transfer
@@ -1249,6 +1261,24 @@
     return this.collection.send(message, callback, true);
   };
 
+  Cursor.prototype.assign = function(elementSelector, template) {
+    var target, cb;
+    if (_.isFunction(elementSelector.html)) {
+      cb = function(error, result){
+        if (error) this.collection.logger.error("Error:Assign Result Error");
+        console.log(result);
+        elementSelector.html(template({"result":result}));
+      };
+    } else {
+      target = document.querySelector(elementSelector);
+      cb = function(error, result){
+        if (error) this.collection.logger.error("Error:Assign Result Error");
+        target.innerHTML = template({"result":result});
+      };
+    }
+    return this.onValue(cb, true);
+  };
+
   // Cursor.prototype.wrap = function(cb) {
   //   return new Cursor(this, {}, cb);
   // };
@@ -1397,6 +1427,17 @@
     Longo.LONGOROOT = root;
   };
   wnd.addEventListener("load", Longo.setRoot, false);
+
+  /**
+   * Return rootPath for longo modules
+   * @name Longo.getRoot
+   * @function
+   * @memberof Longo
+   * @public
+   */
+  Longo.getRoot = function(){
+    return Longo.LONGOROOT;
+  };
 
   /**
    * Force to use minified longoWorker module.
