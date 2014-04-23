@@ -134,9 +134,23 @@ db.collection("teachers")
 db.killOp(observer);
 </pre>
 
-Query will not executed until `done` or `onValue` is called at the end of query pipeline.
+Promise style.
+<pre>
+var p = db.collection("test").find({"promise":true}).promise();
+p.then(function(result){
+  console.log(result);
+});
+p.catch(function(error){
+  console.log(error);
+});
+}
+</pre>
 
-For more detail : See [Api Reference](http://georgeosddev.github.io/longo/doc).
+Query will not executed until `done` or `onValue` or `promise` is called at the end of query pipeline.
+
+`promise` does not return opId but return [Promise](https://developer.mozilla.org/en-US/docs/Mozilla/JavaScript_code_modules/Promise.jsm/Promise) object.
+
+For more detail : See [Api Reference](http://georgeosddev.github.io/longo/doc) and [Examples](https://github.com/georgeOsdDev/longo/tree/master/example).
 
 ### Query Operators
 
@@ -150,6 +164,7 @@ You can use it's query for `find`, `update`, and `remove`.
  	* Support sort function
  	* Support aggligation framework
  	* Basic Test/Documentation
+ 	* Subworker for sharding
 
  * ver 0.1.0:
  	* Support basic CRUD operation
