@@ -127,6 +127,25 @@ db.collection("test").remove({value:{"$lte": 8}}).done(ogResultCB("#result12"))
       </div>
     </div>
 
+    <div>
+      <p>Promise pattern (then) <button id="button13">Run</button><p>
+      <pre class="prettyprint">
+var p = db.collection("test").find({}).promise();
+p.then(success);
+p.catch(fail);</pre>
+      <div id="result13">
+      </div>
+    </div>
+
+    <div>
+      <p>Promise pattern (catch) <button id="button14">Run</button><p>
+      <pre class="prettyprint">
+var p = db.collection("test").update({"name":"1"},{"a":2}).promise();
+p.then(success);
+p.catch(fail);</pre>
+      <div id="result14">
+      </div>
+    </div>
 
     <script type="text/javascript">
 
@@ -146,6 +165,7 @@ db.collection("test").remove({value:{"$lte": 8}}).done(ogResultCB("#result12"))
       }
 
       var db;
+      Longo.setLogLevel("info");
 
       function run1(){
         db = Longo.use("School");
@@ -204,6 +224,25 @@ db.collection("test").remove({value:{"$lte": 8}}).done(ogResultCB("#result12"))
 
       function run12(){
         db.collection("test").remove({"name":"test1"}).done(logResultCB("#result12"));
+      }
+
+      function run13(){
+        var p = db.collection("test").find({}).promise();
+        p.then(function(result){
+          logResult("result13", {msg:"promise then",result:result});
+        });
+        p.catch(function(error){
+          logResult("result13", {msg:"promise error",error:error});
+        });
+      }
+      function run14(){
+        var p = db.collection("test").update({"name":"1"},{"a":2}).promise();
+        p.then(function(result){
+          logResult("result14", {msg:"promise then",result:result});
+        });
+        p.catch(function(error){
+          logResult("result14", {msg:"promise error",error:error});
+        });
       }
 
     </script>

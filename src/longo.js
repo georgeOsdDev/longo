@@ -742,7 +742,7 @@
   Longo.DB.prototype._createCollectionWithData = function(name, option, dataset) {
     var cname = Utils.getOrElse(name, "temp") + "";
     var coll = new Collection(cname, option, this);
-    coll.initialize(dataset);
+    coll._initialize(dataset);
     this.collections[cname] = coll;
     return coll;
   };
@@ -927,11 +927,21 @@
 
     var worker = this.worker = new Worker(Longo.getRoot() + "/" + Longo.WORKERJS);
 
-    worker.addEventListener("message", this.onMessage(), false);
-    worker.addEventListener("error", this.onError(), false);
+    worker.addEventListener("message", this._onMessage(), false);
+    worker.addEventListener("error", this._onError(), false);
     this.status = Status.STARTED;
   };
   Utils.inherits(Collection, EventEmitter);
+
+  /**
+   * Return collection is capped.<br>
+   * @method
+   * @memberof Longo.Collection
+   * @return {Boolean} isCapped
+   */
+  Longo.Collection.prototype.isCapped = function() {
+    return this.option.capped;
+  };
 
   /**
    * Set your own error handler.<br>
@@ -944,7 +954,11 @@
     this.cbs["-1"] = func;
   };
 
-  Longo.Collection.prototype.onMessage = function() {
+  /**
+   * This method handle message from WebWorker
+   * @private
+   */
+  Longo.Collection.prototype._onMessage = function() {
     var self = this;
     return function(e){
       var response, data, seq, error, result;
@@ -982,7 +996,11 @@
     };
   };
 
-  Longo.Collection.prototype.onError = function() {
+  /**
+   * This method handle error from WebWorker
+   * @private
+   */
+  Longo.Collection.prototype._onError = function() {
     var self = this;
     return function(e){
       if (!Utils.existy(e.code)) e.code = Longo.Error.WEBWORKER_ERROR;
@@ -994,12 +1012,12 @@
     };
   };
 
-  Longo.Collection.prototype.isCapped = function() {
-    return this.option.capped;
-  };
-
-
-  Longo.Collection.prototype.initialize = function(dataset) {
+  /**
+   * This method initialize collection with initial dataset
+   * @private
+   * @param [Array] dataset
+   */
+  Longo.Collection.prototype._initialize = function(dataset) {
     var _dataset = Utils.checkOrElse(dataset, [], _.isArray);
     var msg = {
       "cmds": [{
@@ -1012,23 +1030,34 @@
     this.send(msg);
   };
 
-  Longo.Collection.prototype.getNextSeq = function() {
+  /**
+   * This method return seaquence
+   * @private
+   */
+  Longo.Collection.prototype._getNextSeq = function() {
     var seq = 0;
     var nextSeq = function() {
       seq++;
       return seq+"";
     };
-    this.getNextSeq = nextSeq;
+    this._getNextSeq = nextSeq;
     return seq+"";
   };
 
+  /**
+   * This method send message to WebWorker
+   * @private
+   * @param [Object] message
+   * @param [Function] cb
+   * @param [Boolean] observe
+   */
   Longo.Collection.prototype.send = function(message, cb, observe) {
     var seq, callbackFunc, json, bytes, opId;
     callbackFunc = Utils.checkOrElse(cb, Utils.noop, _.isFunction);
 
     if (this.status !== Status.STARTED) return callbackFunc(Longo.Error.COLLECTION_NOT_STARTED, null);
 
-    seq = this.getNextSeq();
+    seq = this._getNextSeq();
     this.cbs[seq] = callbackFunc;
     message.seq = seq;
 
@@ -1058,10 +1087,13 @@
   };
 
   /**
-   * Selects documents in a collection.
+   * Selects documents in a collection and returns Cursor object.
    * @method
    * @memberof Longo.Collection
-   * @param {Object} query The query selection criteria.
+   * @param {Object} [criteria={}] Specifies selection criteria using query operators.
+   *                               To return all documents in a collection, omit this parameter or pass an empty document ({}).
+   *                               Specifies the fields to return using projection operators.
+   * @param {Object} [projection]  To return all fields in the matching document, omit this parameter.
    * @return {Cursor} cursor Cursor object
    */
   Longo.Collection.prototype.find = function(criteria, projection) {
@@ -1075,6 +1107,20 @@
     return new Cursor(this, cmds);
   };
 
+  /**
+   * Returns one document that satisfies the specified query criteria.
+   * If multiple documents satisfy the query, this method returns the first document according to the natural order
+   * which reflects the order of documents on the memory.
+   * In capped collections, natural order is the same as insertion order.
+   *
+   * @method
+   * @memberof Longo.Collection
+   * @param {Object} [criteria={}] Specifies selection criteria using query operators.
+   *                               To return all documents in a collection, omit this parameter or pass an empty document ({}).
+   *                               Specifies the fields to return using projection operators.
+   * @param {Object} [projection]  To return all fields in the matching document, omit this parameter.
+   * @return {Cursor} cursor Cursor object
+   */
   Longo.Collection.prototype.findOne = function(criteria, projection) {
     var cmds = [{
       "cmd": "find",
@@ -1155,6 +1201,11 @@
     return new Cursor(this, cmd);
   };
 
+  /**
+   * Drop collection from database.<br>
+   * @method
+   * @memberof Longo.Collection
+   */
   Longo.Collection.prototype.drop = function() {
     this.emit("drop");
     this.worker.terminate();
@@ -1181,10 +1232,35 @@
     return new Cursor(this, cmds);
   };
 
-  Longo.Collection.prototype.findAndModify = function() {
-
+  /**
+   * Returns the count of documents that would match a {@link Longo.Collection#find} query.
+   * @method
+   * @memberof Longo.Collection
+   * @param {Object} query The query selection criteria.
+   * @return {Cursor} cursor Cursor object
+   */
+  Longo.Collection.prototype.count = function(query) {
+    var cmds = [{
+      "cmd": "find",
+      "criteria": query
+    }, {
+      "cmd": "count",
+    }];
+    return new Cursor(this, cmds);
   };
 
+  /**
+   * Return the size of the collection.
+   * @method
+   * @memberof Longo.Collection
+   * @return {Cursor} cursor Cursor object
+   */
+  Longo.Collection.prototype.dataSize = function() {
+    var cmds = [{
+      "cmd": "size",
+    }];
+    return new Cursor(this, cmds);
+  };
 
 
   Longo.Collection.prototype.parsist = function(){
@@ -1223,8 +1299,6 @@
     });
   };
 
-  Longo.Collection.prototype.dataSize = function() {};
-  Longo.Collection.prototype.copyTo = function() {};
   Longo.Collection.prototype.distinct = function() {};
   Longo.Collection.prototype.group = function() {};
   Longo.Collection.prototype.mapReduce = function() {};

@@ -32,6 +32,7 @@
         "should"     : false,
         "window"     : false,
         "_"          : false,
-        "importScripts": false
+        "importScripts": false,
+        "Promise"    : false
     }
 }

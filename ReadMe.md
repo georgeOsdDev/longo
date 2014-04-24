@@ -121,14 +121,14 @@ var observer = db.collection("teachers")
                  .find({"val":{"$gt":5}})
                  .onValue(function(error, result){console.log(result);}))
 
-// []
+// => []
 
 db.collection("teachers")
   .update({"name":"te1"}, {"name":te1, value:20})
   .done();
 
 // observed query will be react!
-// [{"name":te1, value:20}]
+// => [{"name":te1, value:20}]
 
 //kill
 db.killOp(observer);
@@ -143,12 +143,25 @@ p.then(function(result){
 p.catch(function(error){
   console.log(error);
 });
-}
+
 </pre>
 
-Query will not executed until `done` or `onValue` or `promise` is called at the end of query pipeline.
+### Result Dataset Receiver
 
-`promise` does not return opId but return [Promise](https://developer.mozilla.org/en-US/docs/Mozilla/JavaScript_code_modules/Promise.jsm/Promise) object.
+All [Collection](http://georgeosddev.github.io/longo/doc/Longo.Collection.html) methods and methods chain return [Cursor](http://georgeosddev.github.io/longo/doc/Longo.Cursor.html) object.<br>
+Cursor itself does not have and reference to result dataset.<br>
+Query will not executed until `done` or `onValue` or `promise`, or `assign` is called at the end of method chain.<br>
+When query finished, result dataset will be passed to receiver.You can use 4 type receiver as you like.
+
+* [`done`](http://georgeosddev.github.io/longo/doc/Longo.Cursor.html#done):
+   Handle dataset with a given Node.js Callback style handler.
+* [`onValue`](http://georgeosddev.github.io/longo/doc/Longo.Cursor.html#onValue) :
+   Subscribes a given handler function to dataset change.
+	 You can use dataset as stream. This feature is inspired by [Bacon.js](https://github.com/baconjs/bacon.js#stream-onvalue).
+* [`promise`](http://georgeosddev.github.io/longo/doc/Longo.Cursor.html#promise) :
+  Return [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise#Static_methods) object. You can access dataset with `then` and `catch` method.
+* [`assign`](http://georgeosddev.github.io/longo/doc/Longo.Cursor.html#assign)  :
+  Assign result dataset to UI with specified template.
 
 For more detail : See [Api Reference](http://georgeosddev.github.io/longo/doc) and [Examples](https://github.com/georgeOsdDev/longo/tree/master/example).
 

@@ -2,7 +2,13 @@
 
 This sample show basic CRUD operation of Longo.
 
-* [Simple](http://georgeosddev.github.io/longo/example/simple)
+* [CRUD example](http://georgeosddev.github.io/longo/example/simple)
+
+## Assign dataset to UI
+
+Assign result dataset to UI [template](http://underscorejs.org/#template).
+
+* [Assign example](http://georgeosddev.github.io/longo/example/assign)
 
 ## Reactive
 

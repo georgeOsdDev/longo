@@ -62,20 +62,20 @@ Except non-CRUD operation like Sharding, Replication, Auth, etcetra are not supp
 |method                            | supported | inpremented |
 |----------------------------------|:---------:|:-----------:|
 |db.collection.aggregate           | yes       | no          |
-|db.collection.count               | yes       | no          |
-|db.collection.copyTo              | yes       | no          |
+|db.collection.count               | yes       | [See API](http://georgeosddev.github.io/longo/doc/Collection.html#count)         |
+|db.collection.copyTo              | yes       | [See API](http://georgeosddev.github.io/longo/doc/Collection.html#copyTo)         |
 |db.collection.createIndex         | no        | -           |
 |db.collection.getIndexStats       | no        | -           |
 |db.collection.indexStats          | no        | -           |
-|db.collection.dataSize            | yes       | no          |
+|db.collection.dataSize            | yes       | [See API](http://georgeosddev.github.io/longo/doc/Collection.html#dataSize)         |
 |db.collection.distinct            | yes       | no          |
 |db.collection.drop                | yes       | no          |
 |db.collection.dropIndex           | no        | -           |
 |db.collection.dropIndexes         | no        | -           |
 |db.collection.ensureIndex         | no        | -           |
-|db.collection.find                | yes       | no          |
+|db.collection.find                | yes       | [See API](http://georgeosddev.github.io/longo/doc/Collection.html#find)         |
 |db.collection.findAndModify       | yes       | no          |
-|db.collection.findOne             | yes       | no          |
+|db.collection.findOne             | yes       | [See API](http://georgeosddev.github.io/longo/doc/Collection.html#find)         |
 |db.collection.getIndexes          | no        | -           |
 |db.collection.getShardDistribution| no        | -           |
 |db.collection.getShardVersion     | no        | -           |
