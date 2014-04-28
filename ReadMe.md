@@ -190,11 +190,29 @@ Browser compatibility is described [here](https://developer.mozilla.org/en/docs/
 
 ## Develop
 
-	git clone https://github.com/georgeOsdDev/longo.git
-	cd longo
-	npm install -g grunt-cli
-	npm install
-	grunt build
+### Build
+
+1. Longo is not released to npm, bower yet. You need build it from source.
+
+		git clone https://github.com/georgeOsdDev/longo.git
+		cd longo
+		npm install -g grunt-cli
+		npm install
+		grunt build
+
+### Deoloy
+
+1. Start a web server in the `example/` folder.
+	 Hint: if you have python installed, you can just run:
+
+     `python -m SimpleHTTPServer`
+
+1. Browse [http://localhost:8000/example/todomvc/](http://localhost:8000/example/todomvc/)
+
+### Test
+
+**We need test !!**
+
 
 ## Licence
 
