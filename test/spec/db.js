@@ -1,23 +1,10 @@
 /* global Longo: false */
 (function () {
   "use strict";
-  describe("Test for Aggregate methods", function(){
-
-    describe("getVersion", function(){
-      it("return specified version", function (done) {
-        expect(Longo.getVersion()).to.be.match(/[0-9]+\.[0-9]+\..*/);
-        done();
-      });
+  describe("Test for Longo.DB", function(){
+    it("write test", function (done) {
+      expect(true).to.be.eql(false);
+      done();
     });
-
-    describe("getVersion", function(){
-      it("return specified version", function (done) {
-        expect(Longo.getVersion()).to.be.match(/[0-9]+\.[0-9]+\..*/);
-        done();
-      });
-    });
-
-
   });
 })();
-

@@ -43,11 +43,14 @@ module.exports = (grunt) ->
           tutorials: "doc/guide/"
 
     mocha_phantomjs:
-      all: ['test/*.html']
-      options:
-        reporter: 'tap'
-        output: 'test/result/result.txt'
-        C: ' '
+      all:
+        options:
+          urls: [
+            'http://localhost:9000/test/index.html'
+          ]
+          reporter: 'tap'
+          output: 'test/result/result.txt'
+          C: ' '
 
     copy:
       src:
@@ -79,6 +82,13 @@ module.exports = (grunt) ->
             dest: 'example/Longo.js'
           }
         ]
+
+    connect:
+      server:
+        options:
+          port: 9000
+          base: '.'
+
   # load
   grunt.loadNpmTasks 'grunt-contrib-clean'
   grunt.loadNpmTasks 'grunt-contrib-copy'
@@ -86,6 +96,7 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks 'grunt-contrib-jshint'
   grunt.loadNpmTasks 'grunt-jsdoc'
   grunt.loadNpmTasks 'grunt-mocha-phantomjs'
+  grunt.loadNpmTasks 'grunt-contrib-connect'
 
   grunt.registerTask 'replace', 'replace longo.js to longo.min.js in longoWorker.min.js', ->
     done = @.async()
@@ -100,8 +111,9 @@ module.exports = (grunt) ->
       grunt.log.ok("Succeeded in replacing './longo.js' with './longo.min.js'")
       done()
 
-  grunt.registerTask 'build', ['clean', 'jshint', 'uglify', 'replace', 'copy','mocha_phantomjs', 'jsdoc'];
-  grunt.registerTask 'compile', ['clean', 'jshint', 'uglify', 'replace', 'copy'];
+  grunt.registerTask 'test', ['connect', 'mocha_phantomjs']
+  grunt.registerTask 'build', ['clean', 'jshint', 'uglify', 'replace', 'copy', 'jsdoc', 'test']
+  grunt.registerTask 'compile', ['clean', 'jshint', 'uglify', 'replace', 'copy']
 
   grunt.registerTask 'default', 'Log some stuff.', ->
     grunt.log.write("""
@@ -109,7 +121,8 @@ module.exports = (grunt) ->
       * clean           : Clean up build results
       * jshint          : Run linter
       * uglify          : Run UglifyJS command
-      * mocha_phantomjs : Run Phantom.JS Test
+      * test            : Run Phantom.JS Test with localhost:9000
       * jsdoc           : Publish API documents
       * build           : Do everything avobe
+      * compile         : Do `build` task but not `jsdoc` and `test`
     """).ok()
