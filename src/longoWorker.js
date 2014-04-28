@@ -127,9 +127,9 @@ function objectId(val){
   return val || Date.now() + _.shuffle(CHARS).join("").substr(0, 11);
 }
 
-function toQuery(criteria) {
+function toQuery(query) {
   "use strict";
-  return Utils.checkOrElse(criteria, {}, function(val){
+  return Utils.checkOrElse(query, {}, function(val){
     return _.isObject(val) && !_.isArray(val) && !_.isFunction(val);
   });
 }
@@ -378,15 +378,15 @@ function getExecuter(seq){
     case "start":
       return doStart(command, seq);
     case "find":
-      return doFind(dataset, toQuery(command.criteria));
+      return doFind(dataset, toQuery(command.query));
     case "insert":
       return doInsert(Utils.toArray(Utils.getOrElse(command.doc),[]), seq);
     case "save":
       return doSave(Utils.toArray(command.doc), seq);
     case "update":
-      return doUpdate(toQuery(command.criteria), Utils.getOrElse(command.update, {}), Utils.getOrElse(command.option, {}), seq);
+      return doUpdate(toQuery(command.query), Utils.getOrElse(command.update, {}), Utils.getOrElse(command.option, {}), seq);
     case "remove":
-      return doRemove(toQuery(command.criteria), Utils.getOrElse(command.justOne, false), seq);
+      return doRemove(toQuery(command.query), Utils.getOrElse(command.justOne, false), seq);
     case "project":
       return doProject(dataset, Utils.getOrElse(command.projection,{}));
     case "limit":
@@ -447,5 +447,6 @@ self.addEventListener("message", function(e) {
   if (result[0] === SKIP_REST ) result[0] = null;
 
   self.send({"seq": seq, "error": result[0] , "result": result[1], "isUpdated":self.isUpdatedBySeq[seq]});
+  delete self.isUpdatedBySeq[seq];
 
 }, false);

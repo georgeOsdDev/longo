@@ -59,9 +59,9 @@ Except non-CRUD operation like Sharding, Replication, Auth, etcetra are not supp
 
 ##Collection APIs
 
-|method                            | supported | inpremented |
+|MongoDB Method                    | supported | inpremented |
 |----------------------------------|:---------:|:-----------:|
-|db.collection.aggregate           | yes       | no          |
+|db.collection.aggregate           | yes       | [See API](http://georgeosddev.github.io/longo/doc/Collection.html#aggregate)         |
 |db.collection.count               | yes       | [See API](http://georgeosddev.github.io/longo/doc/Collection.html#count)         |
 |db.collection.copyTo              | yes       | [See API](http://georgeosddev.github.io/longo/doc/Collection.html#copyTo)         |
 |db.collection.createIndex         | no        | -           |
@@ -69,68 +69,75 @@ Except non-CRUD operation like Sharding, Replication, Auth, etcetra are not supp
 |db.collection.indexStats          | no        | -           |
 |db.collection.dataSize            | yes       | [See API](http://georgeosddev.github.io/longo/doc/Collection.html#dataSize)         |
 |db.collection.distinct            | yes       | no          |
-|db.collection.drop                | yes       | no          |
+|db.collection.drop                | yes       | [See API](http://georgeosddev.github.io/longo/doc/Collection.html#dataSize)         |
 |db.collection.dropIndex           | no        | -           |
 |db.collection.dropIndexes         | no        | -           |
 |db.collection.ensureIndex         | no        | -           |
 |db.collection.find                | yes       | [See API](http://georgeosddev.github.io/longo/doc/Collection.html#find)         |
 |db.collection.findAndModify       | yes       | no          |
-|db.collection.findOne             | yes       | [See API](http://georgeosddev.github.io/longo/doc/Collection.html#find)         |
+|db.collection.findOne             | yes       | [See API](http://georgeosddev.github.io/longo/doc/Collection.html#findOne)         |
 |db.collection.getIndexes          | no        | -           |
 |db.collection.getShardDistribution| no        | -           |
 |db.collection.getShardVersion     | no        | -           |
 |db.collection.group               | yes       | no          |
-|db.collection.insert              | yes       | no          |
-|db.collection.isCapped            | yes       | no          |
+|db.collection.insert              | yes       | [See API](http://georgeosddev.github.io/longo/doc/Collection.html#insert)         |
+|db.collection.isCapped            | yes       | [See API](http://georgeosddev.github.io/longo/doc/Collection.html#isCapped)         |
 |db.collection.mapReduce           | yes       | no          |
 |db.collection.reIndex             | no        | -           |
-|db.collection.remove              | yes       | no          |
-|db.collection.renameCollection    | yes       | no          |
-|db.collection.save                | yes       | no          |
+|db.collection.remove              | yes       | [See API](http://georgeosddev.github.io/longo/doc/Collection.html#remove)         |
+|db.collection.renameCollection    | yes       | [See API](http://georgeosddev.github.io/longo/doc/Collection.html#renameCollection)         |
+|db.collection.save                | yes       | [See API](http://georgeosddev.github.io/longo/doc/Collection.html#save)         |
 |db.collection.stats               | no        | -           |
-|db.collection.storageSize         | yes       | no          |
-|db.collection.totalSize           | yes       | no          |
+|db.collection.storageSize         | no        | -           |
+|db.collection.totalSize           | yes       | [See API](http://georgeosddev.github.io/longo/doc/Collection.html#totalSize)         |
 |db.collection.totalIndexSize      | no        | -           |
-|db.collection.update              | yes       | no          |
+|db.collection.update              | yes       | [See API](http://georgeosddev.github.io/longo/doc/Collection.html#update)         |
 |db.collection.validate            | no        | -           |
 
-| Original APIs                      | inpremented |
+
+| Longo Original APIs                | inpremented |
 |------------------------------------|:-----------:|
-|db.collection.loadFromServer        | no          |
-|db.collection.loadFromLocalStorage  | no          |
-|db.collection.persistToServ         | no          |
-|db.collection.persistToLocalStorage | no          |
-|db.collection.setDefaultErrorHandler| yes         |
+|db.collection.persist               | [See API](http://georgeosddev.github.io/longo/doc/Collection.html#persist)    |
+|db.collection.persistOnce           | [See API](http://georgeosddev.github.io/longo/doc/Collection.html#persistOnce)    |
+|db.collection.setDefaultErrorHandler| [See API](http://georgeosddev.github.io/longo/doc/Collection.html#setDefaultErrorHandler)    |
 
 ##Cursor APIs
 
-|method                | supported | inpremented |
+In longo, differ from MongoDB, Cursor object does not have and reference to data.
+Cursor is work as command stack, It will never executed until Cursror receiver APIs called.
+Result dataset will be passed to these receiver.
+
+|MongoDB Method        | supported | inpremented |
 |----------------------|:---------:|:-----------:|
 |cursor.addOption      | no        | -           |
 |cursor.batchSize      | no        | -           |
-|cursor.count          | yes       | yes         |
+|cursor.count          | yes       | [See API](http://georgeosddev.github.io/longo/doc/Cursor.html#count)         |
 |cursor.explain        | no        | -           |
-|cursor.forEach        | yes       | no          |
+|cursor.forEach        | yes       | [See API](http://georgeosddev.github.io/longo/doc/Cursor.html#forEach)         |
 |cursor.hasNext        | no        | -           |
 |cursor.hint           | no        | -           |
-|cursor.limit          | yes       | yes         |
-|cursor.map            | yes       | no          |
-|cursor.max            | yes       | yes         |
-|cursor.min            | yes       | yes         |
+|cursor.limit          | yes       | [See API](http://georgeosddev.github.io/longo/doc/Cursor.html#limit)         |
+|cursor.map            | yes       | [See API](http://georgeosddev.github.io/longo/doc/Cursor.html#map)         |
+|cursor.maxTimeMS      | no        | -           |
+|cursor.max            | yes       | [See API](http://georgeosddev.github.io/longo/doc/Cursor.html#max)         |
+|cursor.min            | yes       | [See API](http://georgeosddev.github.io/longo/doc/Cursor.html#min)         |
 |cursor.next           | no        | -           |
 |cursor.objsLeftInBatch| no        | -           |
 |cursor.readPref       | no        | -           |
 |cursor.showDiskLoc    | no        | -           |
-|cursor.size           | yes       | yes         |
-|cursor.skip           | yes       | yes         |
+|cursor.size           | yes       | [See API](http://georgeosddev.github.io/longo/doc/Cursor.html#size)         |
+|cursor.skip           | yes       | [See API](http://georgeosddev.github.io/longo/doc/Cursor.html#skip)         |
 |cursor.snapshot       | no        | -           |
-|cursor.sort           | yes       | no          |
-|cursor.toArray        | yes       | yes         |
+|cursor.sort           | yes       | [See API](http://georgeosddev.github.io/longo/doc/Cursor.html#sort)         |
+|cursor.toArray        | yes       | In Longo, result dataset always responsed as `Array`
 
-| Original APIs                    | inpremented |
+
+| Cursror receiver APIs            | inpremented |
 |----------------------------------|:-----------:|
-|cursor.done                       | yes         |
-|cursor.onValue                    | yes         |
+|cursor.done                       | [See API](http://georgeosddev.github.io/longo/doc/Cursor.html#done)
+|cursor.onValue                    | [See API](http://georgeosddev.github.io/longo/doc/Cursor.html#onValue)
+|cursor.assign                     | [See API](http://georgeosddev.github.io/longo/doc/Cursor.html#assign)
+|cursor.promise                    | [See API](http://georgeosddev.github.io/longo/doc/Cursor.html#promise)
 
 
 ##Query operators
