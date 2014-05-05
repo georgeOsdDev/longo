@@ -8,7 +8,7 @@ Asynchronous local database with a flavor of FRP.
 > 学而时习之，不亦说乎
 
 
-### MongoDB like JavaScript Database Engine, in the local world of browser.
+### MongoDB like JavaScript Database Engine, in the local browser.
 
  * Work in multi-thread with the power of [WebWorker](https://developer.mozilla.org/en/docs/Web/Guide/Performance/Using_web_workers).
  * Work at offline with embedded NoSQL-Database.
