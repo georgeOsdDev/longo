@@ -590,11 +590,14 @@
     // Inner Classes
     EventEmitter = function() {
       this.dom = wnd.document.createDocumentFragment();
+      this.listners = {};
     };
 
     /**
      * @method
      * @memberof EventEmitter
+     * @param {String} type A string representing the event type to listen for.
+     * @param {Function} listner The object that receives a notification when an event of the specified type occurs.
      * @see https://developer.mozilla.org/en-US/docs/Web/API/EventTarget.addEventListener
      */
     EventEmitter.prototype.addEventListener = function() {
@@ -604,6 +607,8 @@
     /**
      * @method
      * @memberof EventEmitter
+     * @param {String} type A string representing the event type being removed.
+     * @param {Function} listner The listener parameter indicates the EventListener function to be removed.
      * @see https://developer.mozilla.org/en-US/docs/Web/API/EventTarget.removeEventListener
      */
     EventEmitter.prototype.removeEventListener = function() {
@@ -613,15 +618,17 @@
     /**
      * @method
      * @memberof EventEmitter
+     * @param {String} type dusoatch event type
+     * @param {Object} data dispatch parameter
      * @see https://developer.mozilla.org/en-US/docs/Web/API/EventTarget.dispatchEvent
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/CustomEvent
      */
     EventEmitter.prototype.dispatchEvent = function() {
-      var args = Longo.Utils.aSlice(arguments),
-        ev = args[0];
-      if (!ev) return;
-      if (ev.constructor.name !== "Event") {
-        var cev = new global.CustomEvent(args[0].toString(), args[1]);
-        cev.data = args.slice(1);
+      var args = Longo.Utils.aSlice(arguments);
+      if (!args[0]) return;
+      if (args[0].constructor.name !== "Event" || args[0].constructor.name !== "CustomEvent") {
+        var detail = (args[1] && args[1].detail) ? args[1].detail : args[1];
+        var cev = new global.CustomEvent(args[0].toString(), {detail:detail});
         args[0] = cev;
       }
       this.dom.dispatchEvent.apply(this.dom, args);
