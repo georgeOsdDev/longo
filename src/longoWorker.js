@@ -15,17 +15,18 @@
  * @copyright Copyright (c) 2014 Takeharu Oshida <georgeosddev@gmail.com>
  */
 
+var _console = console || undefined;
 self.logger = function(obj, method){
   "use strict";
+  var loglevel = method || "log";
+
+  // console in WebWorker thread does not accept more than one arguments
+  // eg. console.log(1,2,3); -> console display just only `1`
+  // So use JSON
   var msg = {
     "msg":obj,
     "workerName":self.name
   };
-  var loglevel = method || "log";
-  // console in WebWorker thread does not accept more than one arguments
-  // eg. console.log(1,2,3); -> console display just only `1`
-  // So use JSON
-  var _console = console || undefined;
   if (typeof _console !== undefined && _console[loglevel]) _console[loglevel].call(_console, JSON.stringify(msg));
 };
 
@@ -142,6 +143,21 @@ function toDocument(doc) {
   return _.object(keys, arr);
 }
 
+function isSizeReached(doc) {
+  "use strict";
+  var max = self.option.size || 1024*1024,
+      current = Utils.str2ab(JSON.stringify(self.dataset)).byteLength,
+      param   = Utils.str2ab(JSON.stringify(doc)).byteLength
+      ;
+  return current + param > max;
+}
+
+function isCountReached(){
+  "use strict";
+  var max  = self.option.max  || 1000;
+  return _.size(self.dataset) + 1 > max;
+}
+
 function doStart(command, seq){
   "use strict";
   self.name   = command.name;
@@ -169,6 +185,21 @@ function doInsert(docs, seq) {
   } else {
     if (_.where(self.dataset, {"_id":doc._id}).length > 0) return [new Longo.Error(Longo.Error.DUPLICATE_KEY_ERROR, "_id: "+doc._id), doc];
   }
+
+  if(self.option.capped) {
+    // Check max size of dataset
+    if (isSizeReached(doc)){
+      self.logger("Reached to size count for capped Collection. Size: "+ self.option.max, "warn");
+      self.dataset.shift();
+      return doInsert(docs, seq);
+    }
+    // Check max count of dataset
+    if (isCountReached()) {
+      self.logger("Reached to max count for capped Collection. Count: "+ self.option.max, "warn");
+      self.dataset.shift();
+    }
+  }
+
   self.dataset.push(doc);
   self.isUpdatedBySeq[seq] = true;
   return doInsert(_.rest(docs), seq);
@@ -290,7 +321,7 @@ function doCount(dataset){
 
 function doSize(dataset){
   "use strict";
-  return [SKIP_REST, [Utils.str2ab(JSON.stringify(dataset)).bytesize]];
+  return [SKIP_REST, [Utils.str2ab(JSON.stringify(dataset)).byteLength]];
 }
 
 function doToArray(dataset){

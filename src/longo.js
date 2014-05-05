@@ -203,6 +203,12 @@
    * @constant
    */
   Longo.Error.INVALID_MODIFIER_SPECIFIED = 13;
+  /**
+   * PARSE_ERROR
+   * @memberof Longo.Error
+   * @constant
+   */
+  Longo.Error.PARSE_ERROR = 14;
 
   Longo.ErrorCds = _.invert(Longo.Error);
 
@@ -553,7 +559,7 @@
       try {
         result[1] = JSON.parse(str);
       } catch (e) {
-        result[0] = new Longo.Error(Error.PARSE_ERROR, "Failed to parse: " + str, e.stack);
+        result[0] = new Longo.Error(Longo.Error.PARSE_ERROR, "Failed to parse: " + str, e.stack);
       }
       return result;
     },
@@ -579,7 +585,7 @@
    * @see https://github.com/Wolfy87/EventEmitter
    * @class EventEmitter
    */
-  var EventEmitter = Longo.EventEmitter;
+  var EventEmitter;
   if (!wnd.EventEmitter){
     // Inner Classes
     EventEmitter = function() {
@@ -668,6 +674,7 @@
   } else {
     EventEmitter = wnd.EventEmitter;
   }
+  Longo.EventEmitter = EventEmitter;
 
   /**
    * Return Database instance.<br>
@@ -743,7 +750,8 @@
    */
   Longo.DB.prototype._createCollectionWithData = function(name, option, dataset) {
     var cname = Utils.getOrElse(name, "temp") + "";
-    var coll = new Collection(cname, option, this);
+    var opt   = Utils.getOrElse(option, {});
+    var coll = new Collection(cname, opt, this);
     coll._initialize(dataset);
     this.collections[cname] = coll;
     return coll;
@@ -770,8 +778,8 @@
 
     cname = Utils.getOrElse(name, "temp") + "";
     if (this.collections[cname]) return this.collections[cname];
-    lastData = JSON.parse(localStorage.getItem("Longo:" + this.name + ":" + cname));
-    initData = Utils.toArray(Utils.getOrElse(lastData, []));
+    lastData = Utils.tryParseJSON((localStorage.getItem("Longo:" + this.name + ":" + cname)));
+    initData = Utils.toArray(Utils.getOrElse(lastData[1], []));
     return this._createCollectionWithData(name, {}, initData);
   };
 
@@ -782,9 +790,9 @@
    */
   Longo.DB.prototype.dropDatabase = function() {
     _.each(_.values(this.collections), function(coll) {
-      coll.drop().done();
+      coll.drop();
     });
-
+    Longo._dropDB(this.name);
   };
 
 
@@ -807,16 +815,20 @@
    * @return {String}   opId     id of this action
    */
   Longo.DB.prototype.cloneCollection = function(from, name, query, done) {
+    var self = this;
     var cname = Utils.getOrElse(name, "temp") + "";
     if (!_.isFunction(done)) done = Utils.noop;
 
-    if (!this.collections[cname]) return done(new Longo.Error(Longo.Error.COLLECTION_ALREADY_EXISTS, "Collection is already exists! name: "+cname, null), null);
-
+    if (this.collections[cname]) {
+      var error = new Longo.Error(Longo.Error.COLLECTION_ALREADY_EXISTS, "Collection is already exists! name: "+cname, null);
+      self.lastError = error;
+      return done(error, null);
+    }
     if (!this.collections[from]) return done(null, this.createCollection(cname));
 
     var cloneCb = function(error, data) {
       if (Utils.existy(error)) return done(error, null);
-      return done(null, this._createCollectionWithData(name, {}, data));
+      return done(null, self._createCollectionWithData(cname, self.collections[from].option, data));
     };
 
     this.collection(from).find(query, {}).done(cloneCb);
@@ -839,6 +851,7 @@
    * @return {String} lastError The last error message string
    */
   Longo.DB.prototype.getLastError = function() {
+    if (!this.lastError) return null;
     return this.lastError.message;
   };
 
@@ -862,8 +875,8 @@
   Longo.DB.prototype.killOp = function(opId) {
     var tokens = opId.split[":"];
     if (this.collections[tokens[0]]) {
-      delete this.collections[tokens[0]].cbs[[1]];
-      delete this.collections[tokens[0]].observers[[1]];
+      delete this.collections[tokens[0]].cbs[tokens[1]];
+      delete this.collections[tokens[0]].observers[tokens[1]];
     }
   };
 
@@ -995,9 +1008,9 @@
     var self = this;
     return function(e){
       var response, data, seq, error, result;
-      self.logger.info("Response Received");
-
       response = Utils.tryParseJSON(Utils.ab2str(e.data));
+      self.logger.info("Response Received", response);
+
       if (Utils.existy(response[0])) {
         error = parseError(response[0]);
         self.db.lastError = error;
@@ -1714,7 +1727,7 @@
   };
 
   /**
-   * @private for aggregation
+   * @private
    */
   Longo.Cursor.prototype.match = function(query) {
     var cmd = {
@@ -1725,7 +1738,7 @@
   };
 
   /**
-   * @private for aggregation
+   * @private
    */
   Longo.Cursor.prototype.project = function(projection) {
     var cmd = {
@@ -1736,7 +1749,7 @@
   };
 
   /**
-   * @private for aggregation
+   * @private
    */
   Longo.Cursor.prototype.unwind = function(projection) {
     var cmd = {
@@ -1747,7 +1760,7 @@
   };
 
   /**
-   * @private for aggregation
+   * @private
    */
   Longo.Cursor.prototype.group = function(grouping) {
     var cmd = {
@@ -1831,19 +1844,21 @@
     Longo.LOGLEVEL = level;
   };
 
-  /**
-   * Return new database instance.<br>
-   * If sepcifyed name database is already exists, return that database.
-   * @name Longo.createDB
-   * @function
-   * @memberof Longo
-   * @public
-   * @param {String} [name='temp'] database name
-   * @return {DB} db
-   */
-  Longo.createDB = (function() {
+
+  (function(){
     var dbs = {};
-    return function(name){
+
+    /**
+     * Return new database instance.<br>
+     * If sepcifyed name database is already exists, return that database.
+     * @name Longo.createDB
+     * @function
+     * @memberof Longo
+     * @public
+     * @param {String} [name='temp'] database name
+     * @return {DB} db
+     */
+    Longo.createDB = function(name){
       var dname = Utils.getOrElse(name, "temp") + "";
       var db;
       if (_.has(dbs, dname)) return dbs[dname];
@@ -1851,6 +1866,14 @@
       dbs[dname] = db;
       return db;
     };
+
+    /**
+     * @private
+     */
+    Longo._dropDB = function(name){
+      if (dbs[name]) delete dbs[name];
+    };
+
   })();
 
   /**
