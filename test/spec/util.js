@@ -24,7 +24,7 @@
       it("convert string to ArrayBuffer", function(done){
         ab = Utils.str2ab(src);
         expect(typeof ab).to.be.eql("object");
-        expect(ab.constructor.name).to.be.eql("Uint16Array");
+        expect(ab.constructor.name).to.be.eql("ArrayBuffer");
         done();
       });
 
@@ -569,6 +569,185 @@
         var d = Utils.dataFromId(id);
         expect(d instanceof Date).to.be.eql(true);
         expect(d.toString()).to.be.eql("Invalid Date");
+        done();
+      });
+    });
+
+    describe("uuid", function(){
+      it("return random uuid like value", function(done){
+        var uuid = Utils.uuid();
+        expect(uuid).to.be.a("string");
+        expect(uuid).have.length(16);
+        var uuid2 = Utils.uuid();
+        expect(uuid2).to.be.not.eql(uuid);
+        done();
+      });
+    });
+
+    describe("defer", function(){
+      var asyncFuncAlwaysSuccess = function(done){
+        done("success");
+      };
+      var asyncFuncAlwaysFail = function(done, reject){
+        reject("fail");
+      };
+      var result;
+      it("return thenable object", function(done){
+        var successCalled = 0;
+        var failCalled    = 0;
+
+        function checker(done){
+          expect(result).to.be.eql("success");
+          expect(successCalled).to.be.eql(1);
+          expect(failCalled).to.be.eql(0);
+          done();
+        }
+        var process = Utils.defer(asyncFuncAlwaysSuccess);
+        process.then(function(val){
+          expect(val).to.be.eql("success");
+          result = val;
+          successCalled = 1;
+          checker(done);
+        });
+        process.catch(function(val){
+          expect(val).to.be.eql("fail");
+          result = val;
+          failCalled = 1;
+          checker(done);
+        });
+      });
+      it("return catchable object", function(done){
+        var successCalled = 0;
+        var failCalled    = 0;
+
+        function checker(done){
+          expect(result).to.be.eql("fail");
+          expect(successCalled).to.be.eql(0);
+          expect(failCalled).to.be.eql(1);
+          done();
+        }
+        var process = Utils.defer(asyncFuncAlwaysFail);
+        process.then(function(val){
+          result = val;
+          successCalled = 1;
+          checker(done);
+        });
+        process.catch(function(val){
+          result = val;
+          failCalled = 1;
+          checker(done);
+        });
+      });
+    });
+
+    describe("clone", function(){
+      var original = {
+        a:1,
+        b:"b",
+        c:true,
+        d:[1,2,3],
+        e:{
+          ee1:1,
+        }
+      };
+      var clone;
+      it("return shallow copy", function(done){
+        clone = Utils.clone(original);
+        expect(clone.a).to.be.eql(original.a);
+        expect(clone.b).to.be.eql(original.b);
+        expect(clone.c).to.be.eql(original.c);
+        expect(clone.d).to.be.eql(original.d);
+        expect(clone.e).to.be.eql(original.e);
+        done();
+      });
+      it("does not affect by new property on original", function(done){
+        original.f = "f";
+        expect(clone.f).to.be.eql(undefined);
+        done();
+      });
+      it("does not affect by change of first level property on original", function(done){
+        original.a = 2;
+        expect(clone.a).to.be.eql(1);
+        done();
+      });
+      it("new property to clone does not effect to original", function(done){
+        clone.x = "x";
+        expect(original.x).to.be.eql(undefined);
+        done();
+      });
+      it("first level property change does not effect to original", function(done){
+        clone.b = "bb";
+        expect(original.b).to.be.eql("b");
+        done();
+      });
+      it("will be effected by second level property change on original", function(done){
+        original.d[0] = "d1";
+        expect(clone.d[0]).to.be.eql(original.d[0]);
+        original.e.ee2 = "ee2";
+        expect(clone.e.ee2).to.be.eql(original.e.ee2);
+        done();
+      });
+      it("second level property change will effect to original", function(done){
+        clone.d[1] = "d1";
+        expect(original.d[1]).to.be.eql(clone.d[1]);
+        clone.e.ee3 = "ee3";
+        expect(original.e.ee3).to.be.eql(clone.e.ee3);
+        done();
+      });
+    });
+
+    describe("deepClone", function(){
+      var original = {
+        a:1,
+        b:"b",
+        c:true,
+        d:[1,2,3],
+        e:{
+          ee1:1,
+        }
+      };
+      var clone;
+      it("return deep copy", function(done){
+        clone = Utils.deepClone(original);
+        expect(clone.a).to.be.eql(original.a);
+        expect(clone.b).to.be.eql(original.b);
+        expect(clone.c).to.be.eql(original.c);
+        expect(clone.d).to.be.eql(original.d);
+        expect(clone.e).to.be.eql(original.e);
+        done();
+      });
+      it("does not be affected by new property on original", function(done){
+        original.f = "f";
+        expect(clone.f).to.be.eql(undefined);
+        done();
+      });
+      it("does not be affected by change of first level property on original", function(done){
+        original.a = 2;
+        expect(clone.a).to.be.eql(1);
+        done();
+      });
+      it("new property to clone does not effect to original", function(done){
+        clone.x = "x";
+        expect(original.x).to.be.eql(undefined);
+        done();
+      });
+      it("first level property change does not effect to original", function(done){
+        clone.b = "bb";
+        expect(original.b).to.be.eql("b");
+        done();
+      });
+      it("does not be affected by second level property change on original", function(done){
+        original.d[0] = "d0";
+        expect(clone.d[0]).to.be.eql(1);
+        original.e.ee2 = "ee2";
+        expect(clone.e.ee2).to.be.eql(undefined);
+        done();
+      });
+      it("second level property change does not effect to original", function(done){
+        clone.d[1] = "d3";
+        expect(original.d[1]).to.be.eql(2);
+        clone.e.ee3 = "ee3";
+        expect(original.e.ee3).to.be.eql(undefined);
         done();
       });
     });

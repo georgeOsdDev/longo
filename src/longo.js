@@ -255,7 +255,7 @@
       for (var i = 0, strLen = str.length; i < strLen; i++) {
         bufView[i] = str.charCodeAt(i);
       }
-      return bufView;
+      return bufView.buffer;
     },
 
     /**
@@ -574,7 +574,62 @@
      */
     dataFromId: function(id){
       return new Date(Number(id.substr(0,13)));
+    },
+
+    /**
+     * Return uuid like random value
+     * @function
+     * @memberof Longo.Utils
+     * @static
+     * @return {String} uuid uuid like random value
+     */
+    uuid: (function() {
+          var s4 = function() {
+            return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+          };
+          return function() {
+            return s4() + s4() + s4() + s4();
+          };
+        })(),
+
+    /**
+     * Return promise object
+     * @function
+     * @memberof Longo.Utils
+     * @static
+     * @param {function} f This function should call `done` and `reject`.
+     * @return {Promise} promise thenable object
+     */
+    defer: function(f) {
+      return new Promise(function(done, reject) {
+        return f(done, reject);
+      });
+    },
+
+    clone: function(obj) {
+      if (null === obj || "object" !== typeof obj) return obj;
+      var copy = obj.constructor();
+      for (var attr in obj) {
+        if (obj.hasOwnProperty(attr)) copy[attr] = obj[attr];
+      }
+      return copy;
+    },
+
+    deepClone: function(obj) {
+      if (null === obj || "object" !== typeof obj) return obj;
+      var copy = obj.constructor();
+      for (var attr in obj) {
+        if (obj.hasOwnProperty(attr)) {
+          if (typeof obj[attr] === "object") {
+            copy[attr] = Utils.deepClone(obj[attr]);
+          } else {
+            copy[attr] = obj[attr];
+          }
+        }
+      }
+      return copy;
     }
+
   };
 
   Utils.inherits(Longo.Error, Error);
@@ -951,6 +1006,7 @@
     this.observers = {};
 
     var worker = this.worker = new Worker(Longo.getRoot() + "/" + Longo.WORKERJS);
+    this.worker.postMessage = worker.webkitPostMessage || worker.postMessage;
 
     worker.addEventListener("message", this._onMessage(), false);
     worker.addEventListener("error", this._onError(), false);
@@ -1035,12 +1091,12 @@
         self.db.emit("error", error);
         self.emit("error", error);
         self.logger.error("ERROR:Failed at worker", error);
-        return Utils.doWhen(_.isFunction(self.cbs[seq]), self.cbs[seq], [data.error, null]);
+        return Utils.doWhen(_.isFunction(self.cbs[seq]), self.cbs[seq], [error, null]);
       }
 
       if (data.isUpdated){
         _.each(_.values(self.observers), function(ob){
-          self.send(ob.message, ob.func, false);
+          self._send(ob.message, ob.func, false);
         });
         self.emit("updated");
       }
@@ -1080,7 +1136,7 @@
         "dataset": _dataset
       }]
     };
-    this.send(msg);
+    this._send(msg);
   };
 
   /**
@@ -1104,7 +1160,7 @@
    * @param [Function] cb
    * @param [Boolean] observe
    */
-  Longo.Collection.prototype.send = function(message, cb, observe) {
+  Longo.Collection.prototype._send = function(message, cb, observe) {
     var seq, callbackFunc, json, bytes, opId;
     callbackFunc = Utils.checkOrElse(cb, Utils.noop, _.isFunction);
 
@@ -1123,7 +1179,7 @@
     // Zero-Copy transfer
     // http://updates.html5rocks.com/2011/12/Transferable-Objects-Lightning-Fast
     bytes = Utils.str2ab(json);
-    this.worker.postMessage(bytes, [bytes.buffer]);
+    this.worker.postMessage(bytes, [bytes]);
     this.logger.info("New operation called: " + this.name + ":" + seq);
 
     if (observe){
@@ -1368,9 +1424,9 @@
    * If the copy fails, it will be called with the error.
    * @method
    * @memberof Longo.Collection
-   * @param {String} query The query selection query.
+   * @param {String} newCollection Name of destination Collection.
+   * @param {Object} query The query selection query.
    * @param  {collectionCallback} [done=null] callback for result. See {@link Longo.Collection.collectionCallback}
-   * @param {Function} query The query selection query.
    * @return {String} opId
    */
   Longo.Collection.prototype.copyTo = function(newCollection, done) {
@@ -1472,7 +1528,7 @@
       userCallback.apply(null, args);
     };
 
-    return this.collection.send(message, callback);
+    return this.collection._send(message, callback);
   };
 
   /**
@@ -1520,7 +1576,7 @@
       };
     })();
 
-    return this.collection.send(message, callback, true);
+    return this.collection._send(message, callback, true);
   };
 
   /**
@@ -1569,14 +1625,13 @@
       var callback = function() {
         var args = Utils.aSlice(arguments);
         _.invoke(self.wrapCb, "call");
-        console.log(args);
         if (args[0]) {
           reject(args[0]);
         } else {
           resolve(args[1]);
         }
       };
-      self.collection.send({cmds:self.cmds}, callback);
+      self.collection._send({cmds:self.cmds}, callback);
     });
   };
 
@@ -1806,10 +1861,11 @@
       var scripts = wnd.document.getElementsByTagName("script");
       var i = scripts.length;
       while (i--) {
-        var match = scripts[i].src.match(/(^|.*)\/longo(\.min){0,}\.js$/);
+        var match = scripts[i].src.match(/(^|.*)\/longo(\.min){0,}\.js(\?.*)?$/);
         if (match) {
           root = match[1];
-          if(match[2]) Longo.WORKERJS = "longoWorker.min.js";
+          if(match[2]) Longo.WORKERJS = "longoWorker.min.js";       // use min
+          if(match[3]) Longo.WORKERJS = Longo.WORKERJS + match[3];  // no cache
           break;
         }
       }
