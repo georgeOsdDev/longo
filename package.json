@@ -18,7 +18,7 @@
   "version": "0.1.0",
   "scripts": {
     "build": "grunt build",
-    "test": "grunt mocha_phantomjs"
+    "test": "grunt test"
   },
   "dependencies": {
     "underscore": "^1.6.0",
