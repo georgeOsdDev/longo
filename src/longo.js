@@ -23,6 +23,8 @@
   "use strict";
 
   var wnd = global;
+  var CHARS     = "abcdefghijklmnopqrstuvwxyz0123456789".split("");
+
 
   /**
    * @namespace Longo
@@ -304,35 +306,37 @@
         error: function() {}
       };
       var level = lookup[loglevel+"".toLowerCase()] || 5;
-      if (!wnd.console) return _logger;
+      if (!global.console) return _logger;
 
-      if (level > 3) {
+      if (level > 3 && global.console.log && global.console.log.bind) {
         _logger.log = (function() {
-          return wnd.console.log.bind(wnd.console, prefix);
+          return global.console.log.bind(global.console, prefix);
         })();
       }
 
-      if (level > 2) {
+      if (level > 2 && global.console.debug && global.console.debug.bind) {
         _logger.debug = (function() {
-          return wnd.console.debug.bind(wnd.console, prefix);
+          return global.console.debug.bind(global.console, prefix);
         })();
       }
 
-      if (level > 1) {
+      if (level > 1 && global.console.info && global.console.info.bind) {
         _logger.info = (function() {
-          return wnd.console.info.bind(wnd.console, prefix);
+          return global.console.info.bind(global.console, prefix);
         })();
       }
 
-      if (level > 0) {
+      if (level > 0 && global.console.warn && global.console.warn.bind) {
         _logger.warn = (function() {
-          return wnd.console.warn.bind(wnd.console, prefix);
+          return global.console.warn.bind(global.console, prefix);
         })();
       }
 
-      _logger.error = (function() {
-        return wnd.console.error.bind(wnd.console, prefix);
-      })();
+      if (global.console.error && global.console.error.bind) {
+        _logger.error = (function() {
+          return global.console.error.bind(global.console, prefix);
+        })();
+      }
       return _logger;
     },
 
@@ -564,6 +568,19 @@
       return result;
     },
 
+
+    /**
+     * Generate objectId
+     * @function
+     * @memberof Longo.Utils
+     * @static
+     * @param {String} [id=null]
+     * @return {String} objectId if id is specified return that id
+     */
+    objectId: function(id){
+      return id ? id+"" : Date.now() + _.shuffle(CHARS).join("").substr(0, 11);
+    },
+
     /**
      * Parse id to `Date` object
      * @function
@@ -641,7 +658,7 @@
    * @class EventEmitter
    */
   var EventEmitter;
-  if (!wnd.EventEmitter){
+  if (!global.EventEmitter){
     // Inner Classes
     EventEmitter = function() {
       this.dom = wnd.document.createDocumentFragment();
@@ -727,14 +744,14 @@
      */
     EventEmitter.prototype.trigger = EventEmitter.prototype.dispatchEvent;
 
-    if(wnd.console && wnd.console.warn) {
-      wnd.console.warn(["[WARN]:EventEmitter is not imported.",
+    if(global.console && global.console.warn) {
+      global.console.warn(["[WARN]:EventEmitter is not imported.",
                  "Longo use dom based EventEmitter by default.",
                  "For better performance, please use Wolfy87's EventEmitter implementation.",
                  "https://github.com/Wolfy87/EventEmitter"].join(" "));
     }
   } else {
-    EventEmitter = wnd.EventEmitter;
+    EventEmitter = global.EventEmitter;
   }
   Longo.EventEmitter = EventEmitter;
 
@@ -1856,7 +1873,7 @@
    * Longo.setRoot("/javascript/vender/longo");
    */
   Longo.setRoot = function(root){
-    if (_.isUndefined(root) || root instanceof wnd.Event) {
+    if (_.isUndefined(root) || root instanceof global.Event) {
       root = "/Longo.js";
       var scripts = wnd.document.getElementsByTagName("script");
       var i = scripts.length;
