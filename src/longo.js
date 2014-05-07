@@ -21,15 +21,15 @@
 
 // For command line test
 if (typeof require !== "undefined") {
-  var _            = require("underscore");
+  var _ = require("underscore");
   var EventEmitter = require("events").EventEmitter;
 }
 
-(function(global, _, EventEmitter, undefined){
+(function(global, _, EventEmitter, undefined) {
   "use strict";
 
   var wnd = global;
-  var CHARS     = "abcdefghijklmnopqrstuvwxyz0123456789".split("");
+  var CHARS = "abcdefghijklmnopqrstuvwxyz0123456789".split("");
 
 
   /**
@@ -67,7 +67,7 @@ if (typeof require !== "undefined") {
    * @type {String}
    * @default "longoWorker.js"
    */
-  Longo.WORKERJS  = "longoWorker.js";
+  Longo.WORKERJS = "longoWorker.js";
 
   /**
    * You can change this value with `debug`,`info`,`warn`,`error`.
@@ -83,33 +83,33 @@ if (typeof require !== "undefined") {
    * @namespace
    */
   var Status = Longo.Status = {
-  /**
-   * CREATED
-   * @memberof Longo.Status
-   * @type {Number}
-   * @constant
-   */
+    /**
+     * CREATED
+     * @memberof Longo.Status
+     * @type {Number}
+     * @constant
+     */
     "CREATED": 0,
-  /**
-   * STARTED
-   * @memberof Longo.Status
-   * @type {Number}
-   * @constant
-   */
+    /**
+     * STARTED
+     * @memberof Longo.Status
+     * @type {Number}
+     * @constant
+     */
     "STARTED": 1,
-  /**
-   * STOPPED
-   * @memberof Longo.Status
-   * @type {Number}
-   * @constant
-   */
+    /**
+     * STOPPED
+     * @memberof Longo.Status
+     * @type {Number}
+     * @constant
+     */
     "STOPPED": 2,
-  /**
-   * DELETED
-   * @memberof Longo.Status
-   * @type {Number}
-   * @constant
-   */
+    /**
+     * DELETED
+     * @memberof Longo.Status
+     * @type {Number}
+     * @constant
+     */
     "DELETED": 3
   };
 
@@ -123,13 +123,13 @@ if (typeof require !== "undefined") {
    * @constructs
    * @extends Error
    */
-  Longo.Error = function(code, message, stack){
+  Longo.Error = function(code, message, stack) {
     this.code = code;
     this.message = message;
     this.stack = stack || (new Error().stack);
   };
 
-  function parseError(obj){
+  function parseError(obj) {
     return new Longo.Error(obj.code, obj.message, obj.stack);
   }
 
@@ -298,11 +298,11 @@ if (typeof require !== "undefined") {
      */
     createLogger: function(prefix, loglevel) {
       var lookup = {
-        "log":4,
-        "debug":3,
-        "info":2,
-        "warn":1,
-        "error":0,
+        "log": 4,
+        "debug": 3,
+        "info": 2,
+        "warn": 1,
+        "error": 0,
       };
       var _logger = {
         log: function() {},
@@ -311,7 +311,7 @@ if (typeof require !== "undefined") {
         warn: function() {},
         error: function() {}
       };
-      var level = lookup[loglevel+"".toLowerCase()] || 5;
+      var level = lookup[loglevel + "".toLowerCase()] || 5;
       if (!global.console) return _logger;
 
       if (level > 3 && global.console.log && global.console.log.bind) {
@@ -583,8 +583,8 @@ if (typeof require !== "undefined") {
      * @param {String} [id=null]
      * @return {String} objectId if id is specified return that id
      */
-    objectId: function(id){
-      return id ? id+"" : Date.now() + _.shuffle(CHARS).join("").substr(0, 11);
+    objectId: function(id) {
+      return id ? id + "" : Date.now() + _.shuffle(CHARS).join("").substr(0, 11);
     },
 
     /**
@@ -595,8 +595,8 @@ if (typeof require !== "undefined") {
      * @param {String} id start with timestamp
      * @return {Date} result
      */
-    dataFromId: function(id){
-      return new Date(Number(id.substr(0,13)));
+    dataFromId: function(id) {
+      return new Date(Number(id.substr(0, 13)));
     },
 
     /**
@@ -607,13 +607,13 @@ if (typeof require !== "undefined") {
      * @return {String} uuid uuid like random value
      */
     uuid: (function() {
-          var s4 = function() {
-            return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
-          };
-          return function() {
-            return s4() + s4() + s4() + s4();
-          };
-        })(),
+      var s4 = function() {
+        return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+      };
+      return function() {
+        return s4() + s4() + s4() + s4();
+      };
+    })(),
 
     /**
      * Return promise object
@@ -663,7 +663,7 @@ if (typeof require !== "undefined") {
    * @see https://github.com/Wolfy87/EventEmitter
    * @class EventEmitter
    */
-  if (!EventEmitter){
+  if (!EventEmitter) {
     // Inner Classes
     EventEmitter = function() {
       this.dom = wnd.document.createDocumentFragment();
@@ -705,7 +705,9 @@ if (typeof require !== "undefined") {
       if (!args[0]) return;
       if (args[0].constructor.name !== "Event" || args[0].constructor.name !== "CustomEvent") {
         var detail = (args[1] && args[1].detail) ? args[1].detail : args[1];
-        var cev = new global.CustomEvent(args[0].toString(), {detail:detail});
+        var cev = new global.CustomEvent(args[0].toString(), {
+          detail: detail
+        });
         args[0] = cev;
       }
       this.dom.dispatchEvent.apply(this.dom, args);
@@ -749,11 +751,12 @@ if (typeof require !== "undefined") {
      */
     EventEmitter.prototype.trigger = EventEmitter.prototype.dispatchEvent;
 
-    if(global.console && global.console.warn) {
+    if (global.console && global.console.warn) {
       global.console.warn(["[WARN]:EventEmitter is not imported.",
-                 "Longo use dom based EventEmitter by default.",
-                 "For better performance, please use Wolfy87's EventEmitter implementation.",
-                 "https://github.com/Wolfy87/EventEmitter"].join(" "));
+        "Longo use dom based EventEmitter by default.",
+        "For better performance, please use Wolfy87's EventEmitter implementation.",
+        "https://github.com/Wolfy87/EventEmitter"
+      ].join(" "));
     }
   }
   Longo.EventEmitter = EventEmitter;
@@ -832,7 +835,7 @@ if (typeof require !== "undefined") {
    */
   Longo.DB.prototype._createCollectionWithData = function(name, option, dataset) {
     var cname = Utils.getOrElse(name, "temp") + "";
-    var opt   = Utils.getOrElse(option, {});
+    var opt = Utils.getOrElse(option, {});
     var coll = new Collection(cname, opt, this);
     coll._initialize(dataset);
     this.collections[cname] = coll;
@@ -902,7 +905,7 @@ if (typeof require !== "undefined") {
     if (!_.isFunction(done)) done = Utils.noop;
 
     if (this.collections[cname]) {
-      var error = new Longo.Error(Longo.Error.COLLECTION_ALREADY_EXISTS, "Collection is already exists! name: "+cname, null);
+      var error = new Longo.Error(Longo.Error.COLLECTION_ALREADY_EXISTS, "Collection is already exists! name: " + cname, null);
       self.lastError = error;
       return done(error, null);
     }
@@ -1011,16 +1014,16 @@ if (typeof require !== "undefined") {
       "max": opt.max || 1000,
       "storeFunction": false
     };
-    this.db     = db;
+    this.db = db;
     this.logger = Utils.createLogger("Longo." + this.db.name + "." + this.name, Longo.LOGLEVEL);
     this.cbs = {
-      "-1": function(error){
+      "-1": function(error) {
         self.logger.error([
-          "Error:Failed to detect specified callback.",
-          "If you want to handle this error with your own listener,",
-          "Use `db.collection('name').setDefaultErrorHandler(listner);`"
-        ].join(""),
-        error);
+            "Error:Failed to detect specified callback.",
+            "If you want to handle this error with your own listener,",
+            "Use `db.collection('name').setDefaultErrorHandler(listner);`"
+          ].join(""),
+          error);
       }
     };
     this.observers = {};
@@ -1051,7 +1054,7 @@ if (typeof require !== "undefined") {
    * @memberof Longo.Collection
    * @param {Function} func your error handler
    */
-  Longo.Collection.prototype.setDefaultErrorHandler = function(func){
+  Longo.Collection.prototype.setDefaultErrorHandler = function(func) {
     this.cbs["-1"] = func;
   };
 
@@ -1063,9 +1066,9 @@ if (typeof require !== "undefined") {
    * @memberof Longo.Collection
    * @param {Function} func your error handler
    */
-  Longo.Collection.prototype.parsist = function(){
+  Longo.Collection.prototype.parsist = function() {
     var self = this;
-    this.find({}).onValue(function(e, result){
+    this.find({}).onValue(function(e, result) {
       localStorage.setItem("Longo:" + self.db.name + ":" + self.name, JSON.stringify(result));
     });
   };
@@ -1077,9 +1080,9 @@ if (typeof require !== "undefined") {
    * @memberof Longo.Collection
    * @param {Function} func your error handler
    */
-  Longo.Collection.prototype.parsistOnce = function(){
+  Longo.Collection.prototype.parsistOnce = function() {
     var self = this;
-    this.find({}).done(function(e, result){
+    this.find({}).done(function(e, result) {
       localStorage.setItem("Longo:" + self.db.name + ":" + self.name, JSON.stringify(result));
     });
   };
@@ -1089,7 +1092,7 @@ if (typeof require !== "undefined") {
    */
   Longo.Collection.prototype._onMessage = function() {
     var self = this;
-    return function(e){
+    return function(e) {
       var response, data, seq, error, result;
       response = Utils.tryParseJSON(Utils.ab2str(e.data));
       self.logger.info("Response Received", response);
@@ -1101,8 +1104,8 @@ if (typeof require !== "undefined") {
         self.emit("error", error);
         return self.logger.error("ERROR:Failed to parse WebWorker message", Longo.ErrorCds[error.code]);
       }
-      data   = response[1] || {};
-      seq    = data.seq || "-1";
+      data = response[1] || {};
+      seq = data.seq || "-1";
       result = data.result;
 
       if (Utils.existy(data.error)) {
@@ -1114,13 +1117,13 @@ if (typeof require !== "undefined") {
         return Utils.doWhen(_.isFunction(self.cbs[seq]), self.cbs[seq], [error, null]);
       }
 
-      if (data.isUpdated){
-        _.each(_.values(self.observers), function(ob){
+      if (data.isUpdated) {
+        _.each(_.values(self.observers), function(ob) {
           self._send(ob.message, ob.func, false);
         });
         self.emit("updated");
       }
-      self.logger.info("Trigger callback: ", self.name+":"+seq);
+      self.logger.info("Trigger callback: ", self.name + ":" + seq);
       Utils.doWhen(_.isFunction(self.cbs[seq]), self.cbs[seq], [null, result]);
     };
   };
@@ -1131,7 +1134,7 @@ if (typeof require !== "undefined") {
    */
   Longo.Collection.prototype._onError = function() {
     var self = this;
-    return function(e){
+    return function(e) {
       if (!Utils.existy(e.code)) e.code = Longo.Error.WEBWORKER_ERROR;
       self.db.lastError = e;
       self.db.emit("error", e);
@@ -1150,7 +1153,7 @@ if (typeof require !== "undefined") {
     var _dataset = Utils.checkOrElse(dataset, [], _.isArray);
     var msg = {
       "cmds": [{
-        "cmd":"start",
+        "cmd": "start",
         "name": this.name,
         "option": this.option,
         "dataset": _dataset
@@ -1167,10 +1170,10 @@ if (typeof require !== "undefined") {
     var seq = 0;
     var nextSeq = function() {
       seq++;
-      return seq+"";
+      return seq + "";
     };
     this._getNextSeq = nextSeq;
-    return seq+"";
+    return seq + "";
   };
 
   /**
@@ -1202,10 +1205,10 @@ if (typeof require !== "undefined") {
     this.worker.postMessage(bytes, [bytes]);
     this.logger.info("New operation called: " + this.name + ":" + seq);
 
-    if (observe){
+    if (observe) {
       this.observers[seq] = {
-        "message":message,
-        "func":callbackFunc,
+        "message": message,
+        "func": callbackFunc,
       };
       this.logger.info("New observer registerd: " + this.name + ":" + seq);
     }
@@ -1451,13 +1454,13 @@ if (typeof require !== "undefined") {
    */
   Longo.Collection.prototype.copyTo = function(newCollection, done) {
     var self = this;
-    return this.db.cloneCollection(this, newCollection+"", {}, function(error, newColl){
-      if (error){
-        return self.find({}).done(function(error2, result2){
+    return this.db.cloneCollection(this, newCollection + "", {}, function(error, newColl) {
+      if (error) {
+        return self.find({}).done(function(error2, result2) {
           if (error2) return done(error2);
-          return self.db.collection(newCollection+"").save(result2).done(function(error3){
+          return self.db.collection(newCollection + "").save(result2).done(function(error3) {
             if (error3) return done(error3);
-            return self.db.collection(newCollection+"").count().dene(done);
+            return self.db.collection(newCollection + "").count().dene(done);
           });
         });
       } else {
@@ -1534,10 +1537,9 @@ if (typeof require !== "undefined") {
    */
   Longo.Cursor.prototype.done = function(cb) {
     var self,
-        message,
-        callback,
-        userCallback = Utils.checkOrElse(cb, Utils.noop, _.isFunction)
-        ;
+      message,
+      callback,
+      userCallback = Utils.checkOrElse(cb, Utils.noop, _.isFunction);
     self = this;
     message = {
       "cmds": this.cmds
@@ -1568,16 +1570,15 @@ if (typeof require !== "undefined") {
       _.contains(_.keys(this.cmds), "remove"),
       _.contains(_.keys(this.cmds), "update"),
       _.contains(_.keys(this.cmds), "drop")
-    ])){
+    ])) {
       this.collection.logger.warn("WARN:`onValue` is not supported for 'save','insert','remove','update','drop'. call `done` instead.");
       return this.done(cb);
     }
 
     var self,
-        message,
-        callback,
-        userCallback = Utils.checkOrElse(cb, Utils.noop, _.isFunction)
-        ;
+      message,
+      callback,
+      userCallback = Utils.checkOrElse(cb, Utils.noop, _.isFunction);
     self = this;
     message = {
       "cmds": this.cmds
@@ -1585,11 +1586,11 @@ if (typeof require !== "undefined") {
 
     callback = (function() {
       var cache = null;
-      return function(){
+      return function() {
         var args = Utils.aSlice(arguments);
         _.invoke(self.wrapCb, "call");
         var hash = JSON.stringify(args[1]);
-        if(!skipDuplicates || !_.isEqual(cache, hash)){
+        if (!skipDuplicates || !_.isEqual(cache, hash)) {
           cache = hash;
           userCallback.apply(null, args);
         }
@@ -1616,15 +1617,19 @@ if (typeof require !== "undefined") {
   Longo.Cursor.prototype.assign = function(elementSelector, template) {
     var target, cb;
     if (_.isFunction(elementSelector.html)) {
-      cb = function(error, result){
+      cb = function(error, result) {
         if (error) return this.collection.logger.error("Error:Assign Result Error");
-        elementSelector.html(template({"result":result}));
+        elementSelector.html(template({
+          "result": result
+        }));
       };
     } else {
       target = document.querySelector(elementSelector);
-      cb = function(error, result){
+      cb = function(error, result) {
         if (error) return this.collection.logger.error("Error:Assign Result Error");
-        target.innerHTML = template({"result":result});
+        target.innerHTML = template({
+          "result": result
+        });
       };
     }
     return this.onValue(cb, true);
@@ -1639,9 +1644,9 @@ if (typeof require !== "undefined") {
    * @memberof Longo.Cursor
    * @return {Promise} promise object
    */
-  Longo.Cursor.prototype.promise = function(){
+  Longo.Cursor.prototype.promise = function() {
     var self = this;
-    return new Promise(function(resolve, reject){
+    return new Promise(function(resolve, reject) {
       var callback = function() {
         var args = Utils.aSlice(arguments);
         _.invoke(self.wrapCb, "call");
@@ -1651,7 +1656,9 @@ if (typeof require !== "undefined") {
           resolve(args[1]);
         }
       };
-      self.collection._send({cmds:self.cmds}, callback);
+      self.collection._send({
+        cmds: self.cmds
+      }, callback);
     });
   };
 
@@ -1875,7 +1882,7 @@ if (typeof require !== "undefined") {
    * @example
    * Longo.setRoot("/javascript/vender/longo");
    */
-  Longo.setRoot = function(root){
+  Longo.setRoot = function(root) {
     if (_.isUndefined(root) || root instanceof global.Event) {
       root = "/Longo.js";
       var scripts = wnd.document.getElementsByTagName("script");
@@ -1884,8 +1891,8 @@ if (typeof require !== "undefined") {
         var match = scripts[i].src.match(/(^|.*)\/longo(\.min){0,}\.js(\?.*)?$/);
         if (match) {
           root = match[1];
-          if(match[2]) Longo.WORKERJS = "longoWorker.min.js";       // use min
-          if(match[3]) Longo.WORKERJS = Longo.WORKERJS + match[3];  // no cache
+          if (match[2]) Longo.WORKERJS = "longoWorker.min.js"; // use min
+          if (match[3]) Longo.WORKERJS = Longo.WORKERJS + match[3]; // no cache
           break;
         }
       }
@@ -1902,7 +1909,7 @@ if (typeof require !== "undefined") {
    * @memberof Longo
    * @public
    */
-  Longo.getRoot = function(){
+  Longo.getRoot = function() {
     return Longo.LONGOROOT;
   };
 
@@ -1912,7 +1919,7 @@ if (typeof require !== "undefined") {
    * @memberof Longo
    * @public
    */
-  Longo.useMinified = function(){
+  Longo.useMinified = function() {
     Longo.WORKERJS = "longoWorker.min.js";
   };
 
@@ -1923,12 +1930,12 @@ if (typeof require !== "undefined") {
    * @public
    * @param {string} loglevel `log`,`debug`,`info`,`warn`,`error`
    */
-  Longo.setLogLevel = function(level){
+  Longo.setLogLevel = function(level) {
     Longo.LOGLEVEL = level;
   };
 
 
-  (function(){
+  (function() {
     var dbs = {};
 
     /**
@@ -1941,7 +1948,7 @@ if (typeof require !== "undefined") {
      * @param {String} [name='temp'] database name
      * @return {DB} db
      */
-    Longo.createDB = function(name){
+    Longo.createDB = function(name) {
       var dname = Utils.getOrElse(name, "temp") + "";
       var db;
       if (_.has(dbs, dname)) return dbs[dname];
@@ -1953,7 +1960,7 @@ if (typeof require !== "undefined") {
     /**
      * @private
      */
-    Longo._dropDB = function(name){
+    Longo._dropDB = function(name) {
       if (dbs[name]) delete dbs[name];
     };
 
