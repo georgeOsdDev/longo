@@ -31,8 +31,10 @@
         "expect"     : false,
         "should"     : false,
         "window"     : false,
-        "_"          : false,
         "importScripts": false,
-        "Promise"    : false
+        "Promise"    : false,
+        "module"     : false,
+        "exports"    : false,
+        "require"    : false
     }
 }
