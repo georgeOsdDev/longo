@@ -19,7 +19,13 @@
  * @copyright Copyright (c) 2014 Takeharu Oshida <georgeosddev@gmail.com>
  */
 
-(function(global, undefined) {
+// For command line test
+if (typeof require !== "undefined") {
+  var _            = require("underscore");
+  var EventEmitter = require("events").EventEmitter;
+}
+
+(function(global, _, EventEmitter, undefined){
   "use strict";
 
   var wnd = global;
@@ -117,7 +123,7 @@
    * @constructs
    * @extends Error
    */
-  Longo.Error = function(code, message, stack) {
+  Longo.Error = function(code, message, stack){
     this.code = code;
     this.message = message;
     this.stack = stack || (new Error().stack);
@@ -237,7 +243,7 @@
      * @return {String} str decoded string
      */
     ab2str: function(buf) {
-      return String.fromCharCode.apply(null, new global.Uint16Array(buf));
+      return String.fromCharCode.apply(null, new Uint16Array(buf));
     },
 
     /**
@@ -252,8 +258,8 @@
      * @return {Uint16Array} buf encoded Uint16Array
      */
     str2ab: function(str) {
-      var buf = new global.ArrayBuffer(str.length * 2); // 2 bytes for each char
-      var bufView = new global.Uint16Array(buf);
+      var buf = new ArrayBuffer(str.length * 2); // 2 bytes for each char
+      var bufView = new Uint16Array(buf);
       for (var i = 0, strLen = str.length; i < strLen; i++) {
         bufView[i] = str.charCodeAt(i);
       }
@@ -657,8 +663,7 @@
    * @see https://github.com/Wolfy87/EventEmitter
    * @class EventEmitter
    */
-  var EventEmitter;
-  if (!global.EventEmitter){
+  if (!EventEmitter){
     // Inner Classes
     EventEmitter = function() {
       this.dom = wnd.document.createDocumentFragment();
@@ -750,8 +755,6 @@
                  "For better performance, please use Wolfy87's EventEmitter implementation.",
                  "https://github.com/Wolfy87/EventEmitter"].join(" "));
     }
-  } else {
-    EventEmitter = global.EventEmitter;
   }
   Longo.EventEmitter = EventEmitter;
 
@@ -1890,7 +1893,7 @@
     if (Longo.LONGOROOT !== root) console.info("LONGOROOT is setted :" + root);
     Longo.LONGOROOT = root;
   };
-  wnd.addEventListener("load", Longo.setRoot, false);
+  if (wnd.addEventListener) wnd.addEventListener("load", Longo.setRoot, false);
 
   /**
    * Return rootPath for longo modules
@@ -1969,6 +1972,13 @@
    */
   Longo.use = Longo.createDB;
 
-  global.Longo = Longo;
+  if (typeof exports !== "undefined") {
+    if (typeof module !== "undefined" && module.exports) {
+      module.exports = Longo;
+    }
+    exports.Longo = Longo;
+  } else {
+    global.Longo = Longo;
+  }
 
-})(this);
+})(this, _, (typeof EventEmitter !== undefined) ? EventEmitter : undefined);
