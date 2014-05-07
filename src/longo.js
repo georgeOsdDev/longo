@@ -1897,7 +1897,7 @@ if (typeof require !== "undefined") {
         }
       }
     }
-    if (Longo.LONGOROOT !== root) console.info("LONGOROOT is setted :" + root);
+    if (Longo.LONGOROOT !== root) console.info("Set LONGOROOT :" + root);
     Longo.LONGOROOT = root;
   };
   if (wnd.addEventListener) wnd.addEventListener("load", Longo.setRoot, false);
