@@ -8,9 +8,10 @@
     <title>Longo Test</title>
     <link rel="stylesheet" href="../node_modules/mocha/mocha.css">
     <script type="text/javascript" src="../dest/lib/underscore/underscore-min.js"></script>
-    <script type="text/javascript" src="../dest/longo.js"></script>
+    <script type="text/javascript" src="../dest/longo.js?1"></script>
     <script>
         Longo.setRoot("../dest/");
+        Longo.setLogLevel("debug");
     </script>
 </head>
 <body>
@@ -25,14 +26,13 @@
         var assert = chai.assert;
         var expect = chai.expect;
         var should = chai.should();
-        Longo.setRoot("../dest/");
     </script>
-    <script src="./spec/util.js"></script>
-    <!--
     <script src="./spec/db.js"></script>
     <script src="./spec/collection.js"></script>
     <script src="./spec/static.js"></script>
     <script src="./spec/eventEmitter.js"></script>
+    <script src="./spec/util.js"></script>
+    <!--
     <script src="./spec/cursor.js"></script>
     <script src="./spec/find.js"></script>
     <script src="./spec/aggregate.js"></script>
