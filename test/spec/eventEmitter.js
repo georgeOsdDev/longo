@@ -1,3 +1,6 @@
+// This is a test for dom based EventEmitter polifyl.
+// So we don't need test this case by Node.
+
 /* global Longo: false */
 (function () {
   "use strict";

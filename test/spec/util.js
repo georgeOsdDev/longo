@@ -1,3 +1,13 @@
+// For command line test
+if (typeof module !== "undefined" && module.exports) {
+  /*jshint -W079 */
+  var expect = require("chai").expect;
+  var _ = require("underscore");
+  require("underscore-query")(_);
+  var Longo = require("../../dest/longo.js");
+  /*jshint +W079 */
+}
+
 /* global Longo: false */
 (function () {
   "use strict";
@@ -552,20 +562,32 @@
       });
     });
 
+    describe("objectId", function(){
+      it("generate unique objectId", function(done){
+        var id = Utils.objectId();
+        expect(id).to.be.a("string");
+        expect(id).have.length(24);
+        var id2 = Utils.uuid();
+        expect(id2).to.be.not.eql(id);
+        done();
+      });
+      it("return specified value if parameter passed", function(done){
+        var id = Utils.objectId("myId");
+        expect(id).to.be.eql("myId");
+        done();
+      });
+    });
+
     describe("dataFromId", function(){
-      var CHARS = "abcdefghijklmnopqrstuvwxyz0123456789".split("");
-      function objectId(val){
-        return val || Date.now() + _.shuffle(CHARS).join("").substr(0, 11);
-      }
       it("convert id to Data object", function(done){
-        var id = objectId();
+        var id = Utils.objectId();
         var d = Utils.dataFromId(id);
         expect(d instanceof Date).to.be.eql(true);
         expect(d.getTime()).to.be.match(/\d+/);
         done();
       });
       it("convert id to invalid Data object, when id is not made by Long", function(done){
-        var id = objectId("something my own id");
+        var id = Utils.objectId("something my own id");
         var d = Utils.dataFromId(id);
         expect(d instanceof Date).to.be.eql(true);
         expect(d.toString()).to.be.eql("Invalid Date");

@@ -1,3 +1,13 @@
+// For command line test
+if (typeof module !== "undefined" && module.exports) {
+  /*jshint -W079 */
+  var expect = require("chai").expect;
+  var _ = require("underscore");
+  require("underscore-query")(_);
+  var Longo = require("../../dest/longo.js");
+  /*jshint +W079 */
+}
+
 /* global Longo: false */
 (function () {
   "use strict";
@@ -13,7 +23,11 @@
 
     describe("LONGOROOT", function(){
       it("will be set automatically", function (done) {
-        expect(Longo.getRoot()).to.be.eql("http://localhost:9000/dest");
+        if (typeof require !== "undefined"){
+          expect(Longo.getRoot()).to.be.eql("/Longo.js");
+        } else {
+          expect(Longo.getRoot()).to.be.eql("http://localhost:9000/dest");
+        }
         done();
       });
 

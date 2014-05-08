@@ -115,7 +115,10 @@ db.collection("students")
   .done(function(error, result){});
 </pre>
 
-Observe document.
+####Observe style
+
+`onValue(cb, skipDuplicates)` offers observe style. Every data change in collection will be notified to observer.
+
 <pre>
 var observer = db.collection("teachers")
                  .find({"val":{"$gt":5}})
@@ -127,14 +130,43 @@ db.collection("teachers")
   .update({"name":"te1"}, {"name":te1, value:20})
   .done();
 
-// observed query will be react!
+// observed query will react!
 // => [{"name":te1, value:20}]
 
 //kill
 db.killOp(observer);
 </pre>
 
-Promise style.
+####Assign style
+
+`assign` is part of `onValue`. Result set of data will be assigned to UI with underscore's template.
+
+<pre>&lt;div id="out"&gt;&lt;/div&gt;
+&lt;script type="text/template" id="resultTpl"&gt;
+  &lt;ul&gt;
+  &lt;% if (result && result.length &gt; 0) { %&gt;
+    &lt;% _.each(result, function(data) { %&gt;
+      &lt;li id="&lt;%= data._id %&gt;" style="color:&lt;%= data.color %&gt;;"&gt;
+        &lt;p&gt;
+        &lt;span&gt;| Name: &lt;%= data.name %&gt;&lt;/span&gt;, &lt;span&gt;Value: &lt;%= data.value %&gt;&lt;/span&gt;
+        &lt;/p&gt;
+      &lt;/li&gt;
+    &lt;% }); %&gt;
+  &lt;% } %&gt;
+  &lt;/ul&gt;
+&lt;/script&gt;
+
+&lt;script type="text/javascript"&gt;
+var db = Longo.use("example");
+var tpl = _.template($("#resultTpl").html());
+db.collection("output").find({}).sort({"value":-1}).assign($("#out"), tpl);
+&lt;/script&gt;
+</pre>
+
+####Promise style
+
+`promise` offers promise style. This method return `thenable` object.
+
 <pre>
 var p = db.collection("test").find({"promise":true}).promise();
 p.then(function(result){
@@ -143,8 +175,8 @@ p.then(function(result){
 p.catch(function(error){
   console.log(error);
 });
-
 </pre>
+
 
 ### Result Dataset Receiver
 
@@ -177,16 +209,20 @@ You can use it's query for `find`, `update`, and `remove`.
  	* Support sort function
  	* Support aggligation framework
  	* Basic Test/Documentation
- 	* Subworker for sharding
 
  * ver 0.1.0:
  	* Support basic CRUD operation
 
 ## Browser Support
 
-Longo use HTML5 [Web Worker](https://developer.mozilla.org/en/docs/Web/Guide/Performance/Using_web_workers).
+Longo use these native HTML5 features.
 
-Browser compatibility is described [here](https://developer.mozilla.org/en/docs/Web/Guide/Performance/Using_web_workers#Browser_Compatibility)
+* [LocalStorage](http://caniuse.com/#feat=namevalue-storage).
+* [Promise](http://caniuse.com/#feat=promises).
+* [TypedArray](http://caniuse.com/#feat=typedarrays).
+* [WebWorker](http://caniuse.com/#feat=webworkers).
+
+Useful polyfills is described [here](https://github.com/Modernizr/Modernizr/wiki/HTML5-Cross-Browser-Polyfills)
 
 ## Develop
 
@@ -211,8 +247,25 @@ Browser compatibility is described [here](https://developer.mozilla.org/en/docs/
 
 ### Test
 
-**We need test !!**
+With Browser
 
+	grunt connect:server:keepalive
+
+	open http://localhost:9000/test/
+
+With Node console(Only functional module)
+
+	grunt test_cui
+
+With PhantomJS
+
+	grunt test_phantom
+
+**Known Issue**
+
+Some case will fail with PhantomJS.
+So currently we run console test with [Travis.ci]().
+If all test case passed with PhantomJS, I will change travis.ci setting to use PhantomJS.
 
 ## Licence
 

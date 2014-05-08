@@ -18,7 +18,7 @@
   "version": "0.1.0",
   "scripts": {
     "build": "grunt build",
-    "test": "grunt test"
+    "test": "grunt test_cui"
   },
   "dependencies": {
     "underscore": "^1.6.0",
@@ -36,7 +36,9 @@
     "jshint-stylish": "^0.1.5",
     "mocha": "^1.18.2",
     "sinon": "^1.9.1",
-    "grunt-contrib-connect": "^0.7.1"
+    "grunt-contrib-connect": "^0.7.1",
+    "promise": "^5.0.0",
+    "grunt-mocha-test": "^0.10.2"
   },
   "licenses": [
     {

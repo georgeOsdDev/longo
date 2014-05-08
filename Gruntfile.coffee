@@ -42,6 +42,17 @@ module.exports = (grunt) ->
           configure: "jsdoc.conf.json"
           tutorials: "doc/guide/"
 
+    # Some test case is runnable from console
+    # This test will be executed by Travis.ci.
+    mochaTest:
+      test:
+        options:
+          reporter: 'tap'
+        src: ['test/spec/util.js','test/spec/static.js']
+
+    # All test case is runnable by PhantomJS
+    # But some case will be fail with TypeError
+    # Currently we need test with browser(opening http://localhost:9000/test/) by hand.
     mocha_phantomjs:
       all:
         options:
@@ -51,6 +62,12 @@ module.exports = (grunt) ->
           reporter: 'tap'
           output: 'test/result/result.txt'
           C: ' '
+
+    connect:
+      server:
+        options:
+          port: 9000
+          base: '.'
 
     copy:
       src:
@@ -83,18 +100,13 @@ module.exports = (grunt) ->
           }
         ]
 
-    connect:
-      server:
-        options:
-          port: 9000
-          base: '.'
-
   # load
   grunt.loadNpmTasks 'grunt-contrib-clean'
   grunt.loadNpmTasks 'grunt-contrib-copy'
   grunt.loadNpmTasks 'grunt-contrib-uglify'
   grunt.loadNpmTasks 'grunt-contrib-jshint'
   grunt.loadNpmTasks 'grunt-jsdoc'
+  grunt.loadNpmTasks 'grunt-mocha-test'
   grunt.loadNpmTasks 'grunt-mocha-phantomjs'
   grunt.loadNpmTasks 'grunt-contrib-connect'
 
@@ -111,9 +123,10 @@ module.exports = (grunt) ->
       grunt.log.ok("Succeeded in replacing './longo.js' with './longo.min.js'")
       done()
 
-  grunt.registerTask 'test', ['connect', 'mocha_phantomjs']
-  grunt.registerTask 'build', ['clean', 'jshint', 'uglify', 'replace', 'copy', 'jsdoc', 'test']
+  grunt.registerTask 'build', ['clean', 'jshint', 'uglify', 'replace', 'copy', 'jsdoc', 'test_cli']
   grunt.registerTask 'compile', ['clean', 'jshint', 'uglify', 'replace', 'copy']
+  grunt.registerTask 'test_cui', ['compile', 'mochaTest']
+  grunt.registerTask 'test_phantom', ['compile', 'connect', 'mocha_phantomjs']
 
   grunt.registerTask 'default', 'Log some stuff.', ->
     grunt.log.write("""
@@ -121,7 +134,9 @@ module.exports = (grunt) ->
       * clean           : Clean up build results
       * jshint          : Run linter
       * uglify          : Run UglifyJS command
-      * test            : Run Phantom.JS Test with localhost:9000
+      * test_gui        : Start server. you can run test with browser at http://localhost:9000/test/
+      * test_cli        : Run cui test with mocha
+      * test_phantom    : Run gui test with Phantom.JS at http://localhost:9000/test/ (Some case will be fail.)
       * jsdoc           : Publish API documents
       * build           : Do everything avobe
       * compile         : Do `build` task but not `jsdoc` and `test`
