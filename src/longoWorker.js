@@ -23,7 +23,7 @@ if (typeof importScripts !== "undefined") {
     "./lib/underscore-query/lib/underscore-query.min.js",
     "./longo.js");
 } else {
-  // For CommandLine test
+  // For command line test
   _ = require("underscore");
   require("underscore-query")(_);
   Longo = require("./longo.js");
@@ -519,9 +519,7 @@ if (typeof importScripts !== "undefined") {
       module.exports = Worker;
     }
     exports.LongoWorker = Worker;
-  } else {
-    global.LongoWorker = Worker;
   }
 
-  // self is global of WebWorker thread
+  // self is global at WebWorker thread
 })((typeof self !== "undefined") ? self : this, Longo, _);

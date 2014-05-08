@@ -20,9 +20,12 @@
  */
 
 // For command line test
-if (typeof require !== "undefined") {
+if (typeof module !== "undefined" && module.exports) {
+  /*jshint -W079 */
   var _ = require("underscore");
+  var Promise = require("promise");
   var EventEmitter = require("events").EventEmitter;
+  /*jshint +W079 */
 }
 
 (function(global, _, EventEmitter, undefined) {
@@ -705,7 +708,7 @@ if (typeof require !== "undefined") {
       if (!args[0]) return;
       if (args[0].constructor.name !== "Event" || args[0].constructor.name !== "CustomEvent") {
         var detail = (args[1] && args[1].detail) ? args[1].detail : args[1];
-        var cev = new global.CustomEvent(args[0].toString(), {
+        var cev = new CustomEvent(args[0].toString(), {
           detail: detail
         });
         args[0] = cev;
@@ -1883,7 +1886,7 @@ if (typeof require !== "undefined") {
    * Longo.setRoot("/javascript/vender/longo");
    */
   Longo.setRoot = function(root) {
-    if (_.isUndefined(root) || root instanceof global.Event) {
+    if (typeof root !== "string") {
       root = "/Longo.js";
       var scripts = wnd.document.getElementsByTagName("script");
       var i = scripts.length;
