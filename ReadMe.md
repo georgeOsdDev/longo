@@ -1,4 +1,4 @@
-Longo.js
+Longo.js [![Build Status](https://travis-ci.org/georgeOsdDev/longo.svg?branch=dev)](https://travis-ci.org/georgeOsdDev/longo)
 ========
 
 Asynchronous local database with a flavor of FRP.
