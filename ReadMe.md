@@ -264,7 +264,7 @@ With PhantomJS
 **Known Issue**
 
 Some case will fail with PhantomJS.
-So currently we run console test with [Travis.ci]().
+So currently we run only console test with [Travis.ci](https://travis-ci.org/georgeOsdDev/longo).
 If all test case passed with PhantomJS, I will change travis.ci setting to use PhantomJS.
 
 ## Licence

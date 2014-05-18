@@ -142,7 +142,34 @@ Result dataset will be passed to these receiver.
 
 ##Query operators
 
-Query operators are depended on [underscore-query](https://github.com/davidgtonge/underscore-query#query-api).
+Query operators are depended on [underscore-query](https://github.com/davidgtonge/underscore-query).
+
+[Query API](https://github.com/davidgtonge/underscore-query#query-api)
+`$equal`
+`$contains`
+`$ne`
+`$lt`
+`$lte`
+`$gt`
+`$gte`
+`$between`
+`$in`
+`$nin`
+`$all`
+`$any`
+`$size`
+`$exists or $has`
+`$like`
+`$likeI`
+`$elemMatch`
+
+~~`$regex`~~
+~~`$cb`~~
+~~`$computed`~~
+
+Longo does not support `$regex`、`$cb`、`$computed` operators. Because we use JSON formatted message between main thread and worker thread.
+
+You can use `Longo.collection.find({}).map` instead, to perform like `$regex`、`$cb`、`$computed` operators.
 
 ##Projection operators
 

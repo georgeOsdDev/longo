@@ -48,7 +48,12 @@ module.exports = (grunt) ->
       test:
         options:
           reporter: 'tap'
-        src: ['test/spec/util.js','test/spec/static.js']
+        src: [
+          # 'test/spec/util.js',
+          # 'test/spec/static.js',
+          # 'test/spec/cursor.js',
+          'test/spec/worker_funcs.js'
+        ]
 
     # All test case is runnable by PhantomJS
     # But some case will be fail with TypeError
@@ -123,7 +128,7 @@ module.exports = (grunt) ->
       grunt.log.ok("Succeeded in replacing './longo.js' with './longo.min.js'")
       done()
 
-  grunt.registerTask 'build', ['clean', 'jshint', 'uglify', 'replace', 'copy', 'jsdoc', 'test_cli']
+  grunt.registerTask 'build', ['clean', 'jshint', 'uglify', 'replace', 'copy', 'jsdoc', 'test_cui']
   grunt.registerTask 'compile', ['clean', 'jshint', 'uglify', 'replace', 'copy']
   grunt.registerTask 'test_cui', ['compile', 'mochaTest']
   grunt.registerTask 'test_phantom', ['compile', 'connect', 'mocha_phantomjs']

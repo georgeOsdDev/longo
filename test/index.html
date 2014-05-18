@@ -8,7 +8,7 @@
     <title>Longo Test</title>
     <link rel="stylesheet" href="../node_modules/mocha/mocha.css">
     <script type="text/javascript" src="../dest/lib/underscore/underscore-min.js"></script>
-    <script type="text/javascript" src="../dest/longo.js?1"></script>
+    <script type="text/javascript" src="../dest/longo.js?2"></script>
     <script>
         Longo.setRoot("../dest/");
         Longo.setLogLevel("debug");
@@ -16,7 +16,7 @@
 </head>
 <body>
     <div id="mocha"></div>
-    <script src="//s3.amazonaws.com/es6-promises/promise-1.0.0.min.js"></script>
+    <!-- script src="//s3.amazonaws.com/es6-promises/promise-1.0.0.min.js"></script -->
     <script src="../node_modules/sinon/lib/sinon.js"></script>
     <script src="../node_modules/sinon/lib/sinon/spy.js"></script>
     <script src="../node_modules/mocha/mocha.js"></script>
@@ -29,13 +29,13 @@
     </script>
     <script src="./spec/db.js"></script>
     <script src="./spec/collection.js"></script>
+    <script src="./spec/find.js"></script>
+    <script src="./spec/aggregate.js"></script>
+    <script src="./spec/worker_func.js"></script>
     <script src="./spec/static.js"></script>
     <script src="./spec/eventEmitter.js"></script>
     <script src="./spec/util.js"></script>
     <!--
-    <script src="./spec/cursor.js"></script>
-    <script src="./spec/find.js"></script>
-    <script src="./spec/aggregate.js"></script>
     -->
     <script>if (window.mochaPhantomJS) { mochaPhantomJS.run(); }
       else { mocha.run(); }</script>
