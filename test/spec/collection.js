@@ -109,9 +109,11 @@
       });
     });
 
-    // test of `find` is described in separate file.
-    // describe("findOne", function(){
-    // });
+    describe("find", function(){
+      it.skip("tests are described in separate file", function(done){
+        done();
+      });
+    });
 
     describe("findOne", function(){
       var db, col;
@@ -306,20 +308,126 @@
       });
     });
 
-    // describe("update", function(){
-    // });
+    describe("update", function(){
+      var db, col;
+      before(function(done){
+        localStorage.clear();
+        if(db) db.dropDatabase();
+        db = Longo.use("removeCollectionTest");
+        col = db.getCollection("col");
+        col.save([{_id:"1",val:1},{_id:"2",val:2},{_id:"3",val:2},{_id:"4",val:4},{_id:"5",val:4},{_id:"6",val:6}]).done(done);
+      });
+      it("Update specified document", function(done){
 
-    // describe("drop", function(){
-    // });
 
-    // describe("count", function(){
-    // });
+        fail();
+        // write test case
 
-    // describe("dataSize", function(){
-    // });
 
-    // describe("totalSize", function(){
-    // });
+        done();
+      });
+    });
+
+    describe("drop", function(){
+      var db, col;
+      before(function(done){
+        localStorage.clear();
+        if(db) db.dropDatabase();
+        db = Longo.use("removeCollectionTest");
+        col = db.getCollection("removecol");
+        col.save([{_id:"1",val:1},{_id:"2",val:2},{_id:"3",val:2},{_id:"4",val:4},{_id:"5",val:4},{_id:"6",val:6}]).done(done);
+      });
+      it("remove all document from specified collection", function(done){
+        this.timeout(10000);
+        var p = col.drop();
+        p.then(function(){
+          col = db.getCollection("removecol");
+          col.find().done(function(e,r){
+            expect(r).have.length(0);
+            done();
+          });
+        });
+      });
+    });
+
+    describe("count", function(){
+      var db, col;
+      before(function(done){
+        localStorage.clear();
+        if(db) db.dropDatabase();
+        db = Longo.use("countTest");
+        col = db.getCollection("col");
+        col.save([{_id:1,val:1},{_id:2,val:2},{_id:3,val:2}]).done(done);
+      });
+      it("return counts of document", function(done){
+        col.count().done(function(e,r){
+          expect(e).to.be.eql(null);
+          expect(r).has.length(1);
+          expect(r[0]).to.be.eql(3);
+          done();
+        });
+      });
+    });
+
+    describe("dataSize", function(){
+      var db, col, x, y;
+      before(function(done){
+        localStorage.clear();
+        if(db) db.dropDatabase();
+        db = Longo.use("dataSize");
+        col = db.getCollection("col");
+        col.save([{_id:1,val:1},{_id:2,val:2},{_id:3,val:2}]).done(done);
+      });
+
+      it("return dataSize of collection", function(done){
+        col.dataSize().done(function(e,r){
+          expect(e).to.be.eql(null);
+          expect(r).has.length(1);
+          expect(typeof r[0]).to.be.eql("number");
+          x = r[0];
+          done();
+        });
+      });
+      it("dataSize will be afected by document size", function(done){
+        col.save([{_id:4,val:4},{_id:5,val:5},{_id:6,val:6}]).done(function(){
+          col.dataSize().done(function(e,r){
+            y = r[0];
+            expect(y > x).to.be.eql(true);
+            done();
+          });
+        });
+      });
+    });
+
+    describe("totalSize as same as dataSize", function(){
+      var db, col, x, y;
+      before(function(done){
+        localStorage.clear();
+        if(db) db.dropDatabase();
+        db = Longo.use("totalSize");
+        col = db.getCollection("col");
+        col.save([{_id:1,val:1},{_id:2,val:2},{_id:3,val:2}]).done(done);
+      });
+
+      it("return dataSize of collection", function(done){
+        col.totalSize().done(function(e,r){
+          expect(e).to.be.eql(null);
+          expect(r).has.length(1);
+          expect(typeof r[0]).to.be.eql("number");
+          x = r[0];
+          done();
+        });
+      });
+      it("totalSize will be afected by document size", function(done){
+        col.save([{_id:4,val:4},{_id:5,val:5},{_id:6,val:6}]).done(function(){
+          col.totalSize().done(function(e,r){
+            y = r[0];
+            expect(y > x).to.be.eql(true);
+            done();
+          });
+        });
+      });
+    });
 
     describe("renameCollection", function(){
       var db, col;
@@ -346,21 +454,72 @@
       });
     });
 
-    // describe("copyTo", function(){
-    //   var db, col;
-    //   before(function(done){
-    //     localStorage.clear();
-    //     if(db) db.dropDatabase();
-    //     db = Longo.use("copyToCollectionTest");
-    //     col = db.getCollection("copyToOriginalCol");
-    //     col.save([{name:1},{name:2}]).done(done);
-    //   });
-    //   it("change collection name", function(done){
-    //     expect(col.name).to.be.eql("renameOriginalCol");
-    //     col.renameCollection("renamedCol");
-    //     expect(col.name).to.be.eql("renamedCol");
-    //     done();
-    //   });
-    // });
+    describe("copyTo", function(){
+      var db, col;
+      before(function(done){
+        localStorage.clear();
+        if(db) db.dropDatabase();
+        db = Longo.use("copyToCollectionTest");
+        col = db.getCollection("copyToOriginalCol");
+        col.save([{name:1},{name:2}]).done(done);
+      });
+      it("copy data to other collection", function(done){
+        col.copyTo("clone", function(){
+          console.log(arguments);
+          var colNames = db.getCollectionNames();
+          expect(colNames).have.length(2);
+          db.collection("clone").find().done(function(e,r){
+            expect(r).has.length(2);
+            expect(r[0]).has.property("name",1);
+            expect(r[1]).has.property("name",2);
+            done();
+          });
+        });
+      });
+    });
+
+    describe("setDefaultErrorHandler", function(){
+      var db, col;
+      before(function(done){
+        localStorage.clear();
+        if(db) db.dropDatabase();
+        db = Longo.use("setDefaultErrorHandler");
+        col = db.getCollection("setDefaultErrorHandlerCol");
+        col.save([{name:1},{name:2}]).done(done);
+      });
+      it("use add error handler", function(done){
+        col.setDefaultErrorHandler(function(e){
+          expect(e instanceof Error).to.be.eql(true);
+          expect(typeof "This handler will called").to.be.eql("string");
+          done();
+        });
+        col.worker.postMessage("x");
+      });
+    });
+
+    describe("distinct", function(){
+      it.skip("is not implemented yet", function(done){
+        done();
+      });
+    });
+
+    describe("findAndModify", function(){
+      it.skip("is not implemented yet", function(done){
+        done();
+      });
+    });
+
+    describe("group", function(){
+      it.skip("is not implemented yet", function(done){
+        done();
+      });
+    });
+
+    describe("mapReduce", function(){
+      it.skip("is not implemented yet", function(done){
+        done();
+      });
+    });
+
   });
 })();
