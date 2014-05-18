@@ -773,6 +773,29 @@ if (typeof module !== "undefined" && module.exports) {
         done();
       });
     });
+
+    describe("nextTick", function(){
+      var res = [];
+      var func = function(){
+        res.push("1");
+      };
+      it("executed function immediately at next tick", function(done){
+        function a(){
+          res.push("2");
+          Utils.nextTick(func);
+          res.push("3");
+          expect(res.join("")).to.be.eql("23");
+        }
+        function b(){
+          res.push("4");
+          expect(res.join("")).to.be.eql("2314");
+          done();
+        }
+        a();
+        setTimeout(b,10);
+      });
+    });
+
   });
 })();
 

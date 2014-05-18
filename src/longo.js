@@ -32,8 +32,6 @@ if (typeof module !== "undefined" && module.exports) {
   "use strict";
 
   var wnd = global;
-  var CHARS = "abcdefghijklmnopqrstuvwxyz0123456789".split("");
-
 
   /**
    * @namespace Longo
@@ -586,10 +584,24 @@ if (typeof module !== "undefined" && module.exports) {
      * @param {String} [id=null]
      * @return {String} objectId if id is specified return that id
      */
-    objectId: function(id) {
-      return id ? id + "" : Date.now() + _.shuffle(CHARS).join("").substr(0, 11);
-    },
-
+    objectId: (function(){
+      var lastNow = Date.now();
+      var seq = 0;
+      var CHARS = "abcdefghijklmnopqrstuvwxyz0123456789".split("");
+      return function(id) {
+        if(id) return id;
+        var n = Date.now();
+        if (n === lastNow) {
+          seq++;
+          n = n + "" + Number.parseInt(seq+"", 16);
+        } else {
+          lastNow = n;
+          seq = 0;
+          n = n + "" + seq;
+        }
+        return (n + _.shuffle(CHARS).join("")).substr(0,24);
+      };
+    })(),
     /**
      * Parse id to `Date` object
      * @function
@@ -654,6 +666,10 @@ if (typeof module !== "undefined" && module.exports) {
         }
       }
       return copy;
+    },
+
+    nextTick: function(func){
+      setTimeout(func,0);
     }
 
   };
@@ -1105,7 +1121,9 @@ if (typeof module !== "undefined" && module.exports) {
         self.db.lastError = error;
         self.db.emit("error", error);
         self.emit("error", error);
-        return self.logger.error("ERROR:Failed to parse WebWorker message", Longo.ErrorCds[error.code]);
+        return Utils.nextTick(function(){
+          self.logger.error("ERROR:Failed to parse WebWorker message", Longo.ErrorCds[error.code]);
+        });
       }
       data = response[1] || {};
       seq = data.seq || "-1";
@@ -1117,17 +1135,21 @@ if (typeof module !== "undefined" && module.exports) {
         self.db.emit("error", error);
         self.emit("error", error);
         self.logger.error("ERROR:Failed at worker", error);
-        return Utils.doWhen(_.isFunction(self.cbs[seq]), self.cbs[seq], [error, null]);
+        return Utils.nextTick(function(){
+          Utils.doWhen(_.isFunction(self.cbs[seq]), self.cbs[seq], [error, null]);
+        });
       }
 
       if (data.isUpdated) {
         _.each(_.values(self.observers), function(ob) {
-          self._send(ob.message, ob.func, false);
+          if(_.isFunction(ob.func)) self._send(ob.message, ob.func, false);
         });
         self.emit("updated");
       }
       self.logger.info("Trigger callback: ", self.name + ":" + seq);
-      Utils.doWhen(_.isFunction(self.cbs[seq]), self.cbs[seq], [null, result]);
+      Utils.nextTick(function(){
+        Utils.doWhen(_.isFunction(self.cbs[seq]), self.cbs[seq], [null, result]);
+      });
     };
   };
 
@@ -1143,6 +1165,7 @@ if (typeof module !== "undefined" && module.exports) {
       self.db.emit("error", e);
       self.emit("error", e);
       self.logger.error(["Error:WebWorker Error!  Line ", e.lineno, " in ", e.filename, ": ", e.message].join(""));
+      e.preventDefault();
       return self.cbs["-1"](e);
     };
   };
@@ -1304,6 +1327,8 @@ if (typeof module !== "undefined" && module.exports) {
   /**
    * Updates an existing document or inserts a new document, depending on its document parameter.
    *
+   * Only JSON formattable elements are supported. So `function` and `Regex` are not stored in the collection.
+   *
    * <b>Insert</b><br>
    * If the document does not contain an _id field, then the save() method performs an insert().<br>
    * During the operation, the longo will create an ObjectId and assign it to the _id field.<br>
@@ -1330,6 +1355,9 @@ if (typeof module !== "undefined" && module.exports) {
   /**
    * Inserts a document or documents into a collection.
    * Different from MongoDB, this method does not accept second parameter for option.
+   *
+   * Only JSON formattable elements are supported. So `function` and `Regex` are not stored in the collection.
+   *
    * @method
    * @memberof Longo.Collection
    * @param {Object | Array} document A document or array of documents to insert into the collection.
@@ -1394,14 +1422,20 @@ if (typeof module !== "undefined" && module.exports) {
    * Drop collection from database.<br>
    * @method
    * @memberof Longo.Collection
+   * @param {Function} [cb] callback
+   * @return promise if cb was null
    */
-  Longo.Collection.prototype.drop = function() {
+  Longo.Collection.prototype.drop = function(cb) {
     this.emit("drop");
     this.worker.terminate();
     this.cbs = {};
     this.observers = {};
     delete this.db.collections[this.name];
     localStorage.setItem("Longo:" + this.db.name + ":" + this.name, []);
+    if (_.isFunction(cb)) return cb();
+    return Utils.defer(function(done){
+      done();
+    });
   };
 
   /**
@@ -1457,14 +1491,11 @@ if (typeof module !== "undefined" && module.exports) {
    */
   Longo.Collection.prototype.copyTo = function(newCollection, done) {
     var self = this;
-    return this.db.cloneCollection(this, newCollection + "", {}, function(error, newColl) {
+    return this.db.cloneCollection(self.name, newCollection + "", {}, function(error, newColl) {
       if (error) {
-        return self.find({}).done(function(error2, result2) {
+        return self.find({}).done(function(error2) {
           if (error2) return done(error2);
-          return self.db.collection(newCollection + "").save(result2).done(function(error3) {
-            if (error3) return done(error3);
-            return self.db.collection(newCollection + "").count().dene(done);
-          });
+          return self.db.collection(newCollection + "").count().dene(done);
         });
       } else {
         return newColl.count().done(done);
@@ -1619,9 +1650,11 @@ if (typeof module !== "undefined" && module.exports) {
    */
   Longo.Cursor.prototype.assign = function(elementSelector, template) {
     var target, cb;
+    if (!Utils.existy(elementSelector) || !Utils.existy(template)) return this.collection.logger.error("Error:Assign Result Error", new Longo.Error(Longo.Error.EXECUTION_ERROR, "invalid parameter"));
+
     if (_.isFunction(elementSelector.html)) {
       cb = function(error, result) {
-        if (error) return this.collection.logger.error("Error:Assign Result Error");
+        if (error) return this.collection.logger.error("Error:Assign Result Error", error);
         elementSelector.html(template({
           "result": result
         }));
@@ -1629,7 +1662,7 @@ if (typeof module !== "undefined" && module.exports) {
     } else {
       target = document.querySelector(elementSelector);
       cb = function(error, result) {
-        if (error) return this.collection.logger.error("Error:Assign Result Error");
+        if (error) return this.collection.logger.error("Error:Assign Result Error", error);
         target.innerHTML = template({
           "result": result
         });
@@ -1982,6 +2015,7 @@ if (typeof module !== "undefined" && module.exports) {
    */
   Longo.use = Longo.createDB;
 
+  // export for test
   if (typeof exports !== "undefined") {
     if (typeof module !== "undefined" && module.exports) {
       module.exports = Longo;
