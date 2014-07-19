@@ -11,7 +11,7 @@
       <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
       <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js"></script>
       <script src="./EventEmitter.min.js"></script>
-      <script src="../Longo.js/longo.min.js"></script>
+      <script src="../Longo.js/longo.js"></script>
   </head>
   <body>
     <a href="http://www.reactivemanifesto.org/"> <img style="border: 0; position: fixed; right: 0; top:0; z-index: 9000" src="//d379ifj7s9wntv.cloudfront.net/reactivemanifesto/images/ribbons/we-are-reactive-red-right.png"> </a>
@@ -121,12 +121,35 @@ db.collection("test").update({name:"test1"},{name:"test1","val":Math.ceil(Math.r
     <div>
       <p>Exec Remove <button id="button12">Run</button><p>
       <pre class="prettyprint">
-db.collection("test").remove({value:{"$lte": 8}}).done(ogResultCB("#result12"))
+db.collection("test").remove({name:"test1"}).done(ogResultCB("#result12"))
                      .done(cb)</pre>
       <div id="result12">
       </div>
     </div>
 
+    <div>
+      <p>Promise pattern (then) <button id="button13">Run</button><p>
+      <pre class="prettyprint">
+var success = function(result){}
+var fail = function(error){}
+var p = db.collection("test").find({}).promise();
+p.then(success);
+p.catch(fail);</pre>
+      <div id="result13">
+      </div>
+    </div>
+
+    <div>
+      <p>Promise pattern (catch) <button id="button14">Run</button><p>
+      <pre class="prettyprint">
+var success = function(result){}
+var fail = function(error){}
+var p = db.collection("test").update({"name":"1"},{"a":2}).promise();
+p.then(success);
+p.catch(fail);</pre>
+      <div id="result14">
+      </div>
+    </div>
 
     <script type="text/javascript">
 
@@ -146,6 +169,7 @@ db.collection("test").remove({value:{"$lte": 8}}).done(ogResultCB("#result12"))
       }
 
       var db;
+      Longo.setLogLevel("info");
 
       function run1(){
         db = Longo.use("School");
@@ -203,7 +227,27 @@ db.collection("test").remove({value:{"$lte": 8}}).done(ogResultCB("#result12"))
       }
 
       function run12(){
-        db.collection("test").remove({"name":"test1"}).done(logResultCB("#result12"));
+        db.collection("test").remove({name:"test1"}).done(logResultCB("#result12"));
+      }
+
+      function run13(){
+
+        var p = db.collection("test").find({}).promise();
+        p.then(function(result){
+          logResult("result13", result);
+        });
+        p.catch(function(error){
+          logResult("result13", error);
+        });
+      }
+      function run14(){
+        var p = db.collection("test").update({"name":"1"},{"a":2}).promise();
+        p.then(function(result){
+          logResult("result14", result);
+        });
+        p.catch(function(error){
+          logResult("result14", error);
+        });
       }
 
     </script>

@@ -4,6 +4,8 @@
  * @desc Asynchronous local database with a flavor of FRP.
  * @requires {@linkplain http://underscorejs.org/|underscore}
  * @example
+ * <caption>Longo needs some files. Root path(`Longo.LONGOROOT`) to longo components is defined as `/Longo.js`.<br>
+ * If you use other path on your http(s) server, you need adjust change root path of Longo.</caption>
  * &lt;script type="text/javascript" src="path/to/Longo.js/lib/underscore-min.js"&gt;&lt;/script&gt;
  * &lt;script type="text/javascript" src="path/to/Longo.js/longo.js"&gt;&lt;/script&gt;
  * &lt;script&gt;
@@ -17,7 +19,16 @@
  * @copyright Copyright (c) 2014 Takeharu Oshida <georgeosddev@gmail.com>
  */
 
-(function(global, undefined) {
+// For command line test
+if (typeof module !== "undefined" && module.exports) {
+  /*jshint -W079 */
+  var _ = require("underscore");
+  var Promise = require("promise");
+  var EventEmitter = require("events").EventEmitter;
+  /*jshint +W079 */
+}
+
+(function(global, _, EventEmitter, undefined) {
   "use strict";
 
   var wnd = global;
@@ -57,7 +68,7 @@
    * @type {String}
    * @default "longoWorker.js"
    */
-  Longo.WORKERJS  = "longoWorker.js";
+  Longo.WORKERJS = "longoWorker.js";
 
   /**
    * You can change this value with `debug`,`info`,`warn`,`error`.
@@ -73,33 +84,33 @@
    * @namespace
    */
   var Status = Longo.Status = {
-  /**
-   * CREATED
-   * @memberof Longo.Status
-   * @type {Number}
-   * @constant
-   */
+    /**
+     * CREATED
+     * @memberof Longo.Status
+     * @type {Number}
+     * @constant
+     */
     "CREATED": 0,
-  /**
-   * STARTED
-   * @memberof Longo.Status
-   * @type {Number}
-   * @constant
-   */
+    /**
+     * STARTED
+     * @memberof Longo.Status
+     * @type {Number}
+     * @constant
+     */
     "STARTED": 1,
-  /**
-   * STOPPED
-   * @memberof Longo.Status
-   * @type {Number}
-   * @constant
-   */
+    /**
+     * STOPPED
+     * @memberof Longo.Status
+     * @type {Number}
+     * @constant
+     */
     "STOPPED": 2,
-  /**
-   * DELETED
-   * @memberof Longo.Status
-   * @type {Number}
-   * @constant
-   */
+    /**
+     * DELETED
+     * @memberof Longo.Status
+     * @type {Number}
+     * @constant
+     */
     "DELETED": 3
   };
 
@@ -119,7 +130,7 @@
     this.stack = stack || (new Error().stack);
   };
 
-  function parseError(obj){
+  function parseError(obj) {
     return new Longo.Error(obj.code, obj.message, obj.stack);
   }
 
@@ -201,6 +212,12 @@
    * @constant
    */
   Longo.Error.INVALID_MODIFIER_SPECIFIED = 13;
+  /**
+   * PARSE_ERROR
+   * @memberof Longo.Error
+   * @constant
+   */
+  Longo.Error.PARSE_ERROR = 14;
 
   Longo.ErrorCds = _.invert(Longo.Error);
 
@@ -227,7 +244,7 @@
      * @return {String} str decoded string
      */
     ab2str: function(buf) {
-      return String.fromCharCode.apply(null, new global.Uint16Array(buf));
+      return String.fromCharCode.apply(null, new Uint16Array(buf));
     },
 
     /**
@@ -242,12 +259,12 @@
      * @return {Uint16Array} buf encoded Uint16Array
      */
     str2ab: function(str) {
-      var buf = new global.ArrayBuffer(str.length * 2); // 2 bytes for each char
-      var bufView = new global.Uint16Array(buf);
+      var buf = new ArrayBuffer(str.length * 2); // 2 bytes for each char
+      var bufView = new Uint16Array(buf);
       for (var i = 0, strLen = str.length; i < strLen; i++) {
         bufView[i] = str.charCodeAt(i);
       }
-      return bufView;
+      return bufView.buffer;
     },
 
     /**
@@ -282,11 +299,11 @@
      */
     createLogger: function(prefix, loglevel) {
       var lookup = {
-        "log":4,
-        "debug":3,
-        "info":2,
-        "warn":1,
-        "error":0,
+        "log": 4,
+        "debug": 3,
+        "info": 2,
+        "warn": 1,
+        "error": 0,
       };
       var _logger = {
         log: function() {},
@@ -295,36 +312,38 @@
         warn: function() {},
         error: function() {}
       };
-      var level = lookup[loglevel+"".toLowerCase()] || 5;
-      if (!wnd.console) return _logger;
+      var level = lookup[loglevel + "".toLowerCase()] || 5;
+      if (!global.console) return _logger;
 
-      if (level > 3) {
+      if (level > 3 && global.console.log && global.console.log.bind) {
         _logger.log = (function() {
-          return wnd.console.log.bind(wnd.console, prefix);
+          return global.console.log.bind(global.console, prefix);
         })();
       }
 
-      if (level > 2) {
+      if (level > 2 && global.console.debug && global.console.debug.bind) {
         _logger.debug = (function() {
-          return wnd.console.debug.bind(wnd.console, prefix);
+          return global.console.debug.bind(global.console, prefix);
         })();
       }
 
-      if (level > 1) {
+      if (level > 1 && global.console.info && global.console.info.bind) {
         _logger.info = (function() {
-          return wnd.console.info.bind(wnd.console, prefix);
+          return global.console.info.bind(global.console, prefix);
         })();
       }
 
-      if (level > 0) {
+      if (level > 0 && global.console.warn && global.console.warn.bind) {
         _logger.warn = (function() {
-          return wnd.console.warn.bind(wnd.console, prefix);
+          return global.console.warn.bind(global.console, prefix);
         })();
       }
 
-      _logger.error = (function() {
-        return wnd.console.error.bind(wnd.console, prefix);
-      })();
+      if (global.console.error && global.console.error.bind) {
+        _logger.error = (function() {
+          return global.console.error.bind(global.console, prefix);
+        })();
+      }
       return _logger;
     },
 
@@ -551,11 +570,38 @@
       try {
         result[1] = JSON.parse(str);
       } catch (e) {
-        result[0] = new Longo.Error(Error.PARSE_ERROR, "Failed to parse: " + str, e.stack);
+        result[0] = new Longo.Error(Longo.Error.PARSE_ERROR, "Failed to parse: " + str, e.stack);
       }
       return result;
     },
 
+
+    /**
+     * Generate objectId
+     * @function
+     * @memberof Longo.Utils
+     * @static
+     * @param {String} [id=null]
+     * @return {String} objectId if id is specified return that id
+     */
+    objectId: (function(){
+      var lastNow = Date.now();
+      var seq = 0;
+      var CHARS = "abcdefghijklmnopqrstuvwxyz0123456789".split("");
+      return function(id) {
+        if(id) return id;
+        var n = Date.now();
+        if (n === lastNow) {
+          seq++;
+          n = n + "" + Number(seq+"", 16);
+        } else {
+          lastNow = n;
+          seq = 0;
+          n = n + "" + seq;
+        }
+        return (n + _.shuffle(CHARS).join("")).substr(0,24);
+      };
+    })(),
     /**
      * Parse id to `Date` object
      * @function
@@ -564,9 +610,68 @@
      * @param {String} id start with timestamp
      * @return {Date} result
      */
-    dataFromId: function(id){
-      return new Date(Number(id.substr(0,13)));
+    dataFromId: function(id) {
+      return new Date(Number(id.substr(0, 13)));
+    },
+
+    /**
+     * Return uuid like random value
+     * @function
+     * @memberof Longo.Utils
+     * @static
+     * @return {String} uuid uuid like random value
+     */
+    uuid: (function() {
+      var s4 = function() {
+        return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+      };
+      return function() {
+        return s4() + s4() + s4() + s4();
+      };
+    })(),
+
+    /**
+     * Return promise object
+     * @function
+     * @memberof Longo.Utils
+     * @static
+     * @param {function} f This function should call `done` and `reject`.
+     * @return {Promise} promise thenable object
+     */
+    defer: function(f) {
+      return new Promise(function(done, reject) {
+        return f(done, reject);
+      });
+    },
+
+    clone: function(obj) {
+      if (null === obj || "object" !== typeof obj) return obj;
+      var copy = obj.constructor();
+      for (var attr in obj) {
+        if (obj.hasOwnProperty(attr)) copy[attr] = obj[attr];
+      }
+      return copy;
+    },
+
+    deepClone: function(obj) {
+      if (null === obj || "object" !== typeof obj) return obj;
+      var copy = obj.constructor();
+      for (var attr in obj) {
+        if (obj.hasOwnProperty(attr)) {
+          if (typeof obj[attr] === "object") {
+            copy[attr] = Utils.deepClone(obj[attr]);
+          } else {
+            copy[attr] = obj[attr];
+          }
+        }
+      }
+      return copy;
+    },
+
+    nextTick: function(func){
+      setTimeout(func,0);
     }
+
   };
 
   Utils.inherits(Longo.Error, Error);
@@ -577,16 +682,18 @@
    * @see https://github.com/Wolfy87/EventEmitter
    * @class EventEmitter
    */
-  var EventEmitter = Longo.EventEmitter;
-  if (!wnd.EventEmitter){
+  if (!EventEmitter) {
     // Inner Classes
     EventEmitter = function() {
       this.dom = wnd.document.createDocumentFragment();
+      this.listners = {};
     };
 
     /**
      * @method
      * @memberof EventEmitter
+     * @param {String} type A string representing the event type to listen for.
+     * @param {Function} listner The object that receives a notification when an event of the specified type occurs.
      * @see https://developer.mozilla.org/en-US/docs/Web/API/EventTarget.addEventListener
      */
     EventEmitter.prototype.addEventListener = function() {
@@ -596,6 +703,8 @@
     /**
      * @method
      * @memberof EventEmitter
+     * @param {String} type A string representing the event type being removed.
+     * @param {Function} listner The listener parameter indicates the EventListener function to be removed.
      * @see https://developer.mozilla.org/en-US/docs/Web/API/EventTarget.removeEventListener
      */
     EventEmitter.prototype.removeEventListener = function() {
@@ -605,15 +714,19 @@
     /**
      * @method
      * @memberof EventEmitter
+     * @param {String} type dusoatch event type
+     * @param {Object} data dispatch parameter
      * @see https://developer.mozilla.org/en-US/docs/Web/API/EventTarget.dispatchEvent
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/CustomEvent
      */
     EventEmitter.prototype.dispatchEvent = function() {
-      var args = Longo.Utils.aSlice(arguments),
-        ev = args[0];
-      if (!ev) return;
-      if (ev.constructor.name !== "Event") {
-        var cev = new global.CustomEvent(args[0].toString(), args[1]);
-        cev.data = args.slice(1);
+      var args = Longo.Utils.aSlice(arguments);
+      if (!args[0]) return;
+      if (args[0].constructor.name !== "Event" || args[0].constructor.name !== "CustomEvent") {
+        var detail = (args[1] && args[1].detail) ? args[1].detail : args[1];
+        var cev = new CustomEvent(args[0].toString(), {
+          detail: detail
+        });
         args[0] = cev;
       }
       this.dom.dispatchEvent.apply(this.dom, args);
@@ -657,15 +770,15 @@
      */
     EventEmitter.prototype.trigger = EventEmitter.prototype.dispatchEvent;
 
-    if(wnd.console && wnd.console.warn) {
-      wnd.console.warn(["[WARN]:EventEmitter is not imported.",
-                 "Longo use dom based EventEmitter by default.",
-                 "For better performance, please use Wolfy87's EventEmitter implementation.",
-                 "https://github.com/Wolfy87/EventEmitter"].join(" "));
+    if (global.console && global.console.warn) {
+      global.console.warn(["[WARN]:EventEmitter is not imported.",
+        "Longo use dom based EventEmitter by default.",
+        "For better performance, please use Wolfy87's EventEmitter implementation.",
+        "https://github.com/Wolfy87/EventEmitter"
+      ].join(" "));
     }
-  } else {
-    EventEmitter = wnd.EventEmitter;
   }
+  Longo.EventEmitter = EventEmitter;
 
   /**
    * Return Database instance.<br>
@@ -741,8 +854,9 @@
    */
   Longo.DB.prototype._createCollectionWithData = function(name, option, dataset) {
     var cname = Utils.getOrElse(name, "temp") + "";
-    var coll = new Collection(cname, option, this);
-    coll.initialize(dataset);
+    var opt = Utils.getOrElse(option, {});
+    var coll = new Collection(cname, opt, this);
+    coll._initialize(dataset);
     this.collections[cname] = coll;
     return coll;
   };
@@ -768,8 +882,8 @@
 
     cname = Utils.getOrElse(name, "temp") + "";
     if (this.collections[cname]) return this.collections[cname];
-    lastData = JSON.parse(localStorage.getItem("Longo:" + this.name + ":" + cname));
-    initData = Utils.toArray(Utils.getOrElse(lastData, []));
+    lastData = Utils.tryParseJSON((localStorage.getItem("Longo:" + this.name + ":" + cname)));
+    initData = Utils.toArray(Utils.getOrElse(lastData[1], []));
     return this._createCollectionWithData(name, {}, initData);
   };
 
@@ -780,9 +894,9 @@
    */
   Longo.DB.prototype.dropDatabase = function() {
     _.each(_.values(this.collections), function(coll) {
-      coll.drop().done();
+      coll.drop();
     });
-
+    Longo._dropDB(this.name);
   };
 
 
@@ -804,20 +918,24 @@
    * @param  {cloneCollectionCallback} [done=null] callback for result. See {@link Longo.DB.cloneCollectionCallback}
    * @return {String}   opId     id of this action
    */
-  Longo.DB.prototype.cloneCollection = function(from, name, criteria, done) {
+  Longo.DB.prototype.cloneCollection = function(from, name, query, done) {
+    var self = this;
     var cname = Utils.getOrElse(name, "temp") + "";
     if (!_.isFunction(done)) done = Utils.noop;
 
-    if (!this.collections[cname]) return done(new Longo.Error(Longo.Error.COLLECTION_ALREADY_EXISTS, "Collection is already exists! name: "+cname, null), null);
-
+    if (this.collections[cname]) {
+      var error = new Longo.Error(Longo.Error.COLLECTION_ALREADY_EXISTS, "Collection is already exists! name: " + cname, null);
+      self.lastError = error;
+      return done(error, null);
+    }
     if (!this.collections[from]) return done(null, this.createCollection(cname));
 
     var cloneCb = function(error, data) {
       if (Utils.existy(error)) return done(error, null);
-      return done(null, this._createCollectionWithData(name, {}, data));
+      return done(null, self._createCollectionWithData(cname, self.collections[from].option, data));
     };
 
-    this.collection(from).find(criteria, {}).done(cloneCb);
+    this.collection(from).find(query, {}).done(cloneCb);
   };
 
   /**
@@ -837,6 +955,7 @@
    * @return {String} lastError The last error message string
    */
   Longo.DB.prototype.getLastError = function() {
+    if (!this.lastError) return null;
     return this.lastError.message;
   };
 
@@ -860,8 +979,8 @@
   Longo.DB.prototype.killOp = function(opId) {
     var tokens = opId.split[":"];
     if (this.collections[tokens[0]]) {
-      delete this.collections[tokens[0]].cbs[[1]];
-      delete this.collections[tokens[0]].observers[[1]];
+      delete this.collections[tokens[0]].cbs[tokens[1]];
+      delete this.collections[tokens[0]].observers[tokens[1]];
     }
   };
 
@@ -875,11 +994,22 @@
     return this.name;
   };
 
+
+  /**
+   * Callback structure for {@link Longo.Collection}
+   * @callback Longo.Collection.collectionCallback
+   * @param {Longo.Error} [error=null]  null when success
+   * @param {Array}       [result=null] null when fail
+   */
+
   /**
    * Do not call this class with `new` from application.<br>
    * use {@link Longo.DB#createCollection} or {@link Longo.DB#collection} method.
    * @name Longo.Collection
-   * @class Collection object
+   * @class Collection object. Most collection methods return {@link Longo.Cursor} object.<br>
+   *        In longo inspite of MongoDB, Cursor object does not have and reference to data.<br>
+   *        You need to call `{@link Longo.Cursor#done}` or `{@link Longo.Cursor#onValue}` or `{@link Longo.Cursor#assign}`
+   *        or `{@link Longo.Cursor#promise}` at the end of method chain.
    * @param {String} [name='temp'] name of this collection
    * @param {Object} [option] config for capped collection
    * @param {Boolean} [option.capped = false] See {@link Longo.DB#createCollection}
@@ -903,27 +1033,38 @@
       "max": opt.max || 1000,
       "storeFunction": false
     };
-    this.db     = db;
+    this.db = db;
     this.logger = Utils.createLogger("Longo." + this.db.name + "." + this.name, Longo.LOGLEVEL);
     this.cbs = {
-      "-1": function(error){
+      "-1": function(error) {
         self.logger.error([
-          "Error:Failed to detect specified callback.",
-          "If you want to handle this error with your own listener,",
-          "Use `db.collection('name').setDefaultErrorHandler(listner);`"
-        ].join(""),
-        error);
+            "Error:Failed to detect specified callback.",
+            "If you want to handle this error with your own listener,",
+            "Use `db.collection('name').setDefaultErrorHandler(listner);`"
+          ].join(""),
+          error);
       }
     };
     this.observers = {};
 
     var worker = this.worker = new Worker(Longo.getRoot() + "/" + Longo.WORKERJS);
+    this.worker.postMessage = worker.webkitPostMessage || worker.postMessage;
 
-    worker.addEventListener("message", this.onMessage(), false);
-    worker.addEventListener("error", this.onError(), false);
+    worker.addEventListener("message", this._onMessage(), false);
+    worker.addEventListener("error", this._onError(), false);
     this.status = Status.STARTED;
   };
   Utils.inherits(Collection, EventEmitter);
+
+  /**
+   * Return collection is capped.<br>
+   * @method
+   * @memberof Longo.Collection
+   * @return {Boolean} isCapped
+   */
+  Longo.Collection.prototype.isCapped = function() {
+    return this.option.capped;
+  };
 
   /**
    * Set your own error handler.<br>
@@ -932,26 +1073,60 @@
    * @memberof Longo.Collection
    * @param {Function} func your error handler
    */
-  Collection.prototype.setDefaultErrorHandler = function(func){
+  Longo.Collection.prototype.setDefaultErrorHandler = function(func) {
     this.cbs["-1"] = func;
   };
 
-  Collection.prototype.onMessage = function() {
+  /**
+   * Save collection snapshot to LocalStorage.<br>
+   * If dataset in this collection changed, persisted data will be updated.<br>
+   * @see {@link Longo.Collection#parsistOnce}
+   * @method
+   * @memberof Longo.Collection
+   * @param {Function} func your error handler
+   */
+  Longo.Collection.prototype.parsist = function() {
     var self = this;
-    return function(e){
-      var response, data, seq, error, result;
-      self.logger.info("Response Received");
+    this.find({}).onValue(function(e, result) {
+      localStorage.setItem("Longo:" + self.db.name + ":" + self.name, JSON.stringify(result));
+    });
+  };
 
+  /**
+   * Save collection snapshot to LocalStorage.<br>
+   * @see {@link Longo.Collection#parsist}
+   * @method
+   * @memberof Longo.Collection
+   * @param {Function} func your error handler
+   */
+  Longo.Collection.prototype.parsistOnce = function() {
+    var self = this;
+    this.find({}).done(function(e, result) {
+      localStorage.setItem("Longo:" + self.db.name + ":" + self.name, JSON.stringify(result));
+    });
+  };
+  /**
+   * This method handle message from WebWorker
+   * @private
+   */
+  Longo.Collection.prototype._onMessage = function() {
+    var self = this;
+    return function(e) {
+      var response, data, seq, error, result;
       response = Utils.tryParseJSON(Utils.ab2str(e.data));
+      self.logger.info("Response Received", response);
+
       if (Utils.existy(response[0])) {
         error = parseError(response[0]);
         self.db.lastError = error;
         self.db.emit("error", error);
         self.emit("error", error);
-        return self.logger.error("ERROR:Failed to parse WebWorker message", Longo.ErrorCds[error.code]);
+        return Utils.nextTick(function(){
+          self.logger.error("ERROR:Failed to parse WebWorker message", Longo.ErrorCds[error.code]);
+        });
       }
-      data   = response[1] || {};
-      seq    = data.seq || "-1";
+      data = response[1] || {};
+      seq = data.seq || "-1";
       result = data.result;
 
       if (Utils.existy(data.error)) {
@@ -960,66 +1135,87 @@
         self.db.emit("error", error);
         self.emit("error", error);
         self.logger.error("ERROR:Failed at worker", error);
+        return Utils.nextTick(function(){
+          Utils.doWhen(_.isFunction(self.cbs[seq]), self.cbs[seq], [error, null]);
+        });
       }
 
-      if (data.isUpdated){
-        _.each(_.values(self.observers), function(ob){
-          self.send(ob.message, ob.func, false);
+      if (data.isUpdated) {
+        _.each(_.values(self.observers), function(ob) {
+          if(_.isFunction(ob.func)) self._send(ob.message, ob.func, false);
         });
         self.emit("updated");
       }
-      self.logger.info("Trigger callback: ", self.name+":"+seq);
-      Utils.doWhen(_.isFunction(self.cbs[seq]), self.cbs[seq], [null, result]);
+      self.logger.info("Trigger callback: ", self.name + ":" + seq);
+      Utils.nextTick(function(){
+        Utils.doWhen(_.isFunction(self.cbs[seq]), self.cbs[seq], [null, result]);
+      });
     };
   };
 
-  Collection.prototype.onError = function() {
+  /**
+   * This method handle error from WebWorker
+   * @private
+   */
+  Longo.Collection.prototype._onError = function() {
     var self = this;
-    return function(e){
+    return function(e) {
       if (!Utils.existy(e.code)) e.code = Longo.Error.WEBWORKER_ERROR;
       self.db.lastError = e;
       self.db.emit("error", e);
       self.emit("error", e);
       self.logger.error(["Error:WebWorker Error!  Line ", e.lineno, " in ", e.filename, ": ", e.message].join(""));
+      e.preventDefault();
       return self.cbs["-1"](e);
     };
   };
 
-  Collection.prototype.isCapped = function() {
-    return this.option.capped;
-  };
-
-
-  Collection.prototype.initialize = function(dataset) {
+  /**
+   * This method initialize collection with initial dataset
+   * @private
+   * @param [Array] dataset
+   */
+  Longo.Collection.prototype._initialize = function(dataset) {
     var _dataset = Utils.checkOrElse(dataset, [], _.isArray);
     var msg = {
       "cmds": [{
-        "cmd":"start",
+        "cmd": "start",
         "name": this.name,
         "option": this.option,
         "dataset": _dataset
       }]
     };
-    this.send(msg);
+    this._send(msg);
   };
 
-  Collection.prototype.getNextSeq = function() {
+  /**
+   * This method return seaquence
+   * @private
+   */
+  Longo.Collection.prototype._getNextSeq = function() {
     var seq = 0;
     var nextSeq = function() {
       seq++;
-      return seq+"";
+      return seq + "";
     };
-    this.getNextSeq = nextSeq;
-    return seq+"";
+    this._getNextSeq = nextSeq;
+    return seq + "";
   };
 
-  Collection.prototype.send = function(message, cb, observe) {
+  /**
+   * This method send message to WebWorker
+   * @private
+   * @param [Object] message
+   * @param [Function] cb
+   * @param [Boolean] observe
+   */
+  Longo.Collection.prototype._send = function(message, cb, observe) {
     var seq, callbackFunc, json, bytes, opId;
     callbackFunc = Utils.checkOrElse(cb, Utils.noop, _.isFunction);
 
     if (this.status !== Status.STARTED) return callbackFunc(Longo.Error.COLLECTION_NOT_STARTED, null);
 
-    seq = this.getNextSeq();
+    seq = this._getNextSeq();
     this.cbs[seq] = callbackFunc;
     message.seq = seq;
 
@@ -1032,13 +1228,13 @@
     // Zero-Copy transfer
     // http://updates.html5rocks.com/2011/12/Transferable-Objects-Lightning-Fast
     bytes = Utils.str2ab(json);
-    this.worker.postMessage(bytes, [bytes.buffer]);
+    this.worker.postMessage(bytes, [bytes]);
     this.logger.info("New operation called: " + this.name + ":" + seq);
 
-    if (observe){
+    if (observe) {
       this.observers[seq] = {
-        "message":message,
-        "func":callbackFunc,
+        "message": message,
+        "func": callbackFunc,
       };
       this.logger.info("New observer registerd: " + this.name + ":" + seq);
     }
@@ -1048,10 +1244,20 @@
     return opId;
   };
 
-  Collection.prototype.find = function(criteria, projection) {
+  /**
+   * Selects documents in a collection and returns Cursor object.
+   * @method
+   * @memberof Longo.Collection
+   * @param {Object} [query={}] Specifies selection query using query operators.
+   *                               To return all documents in a collection, omit this parameter or pass an empty document ({}).
+   *                               Specifies the fields to return using projection operators.
+   * @param {Object} [projection]  To return all fields in the matching document, omit this parameter.
+   * @return {Cursor} cursor Cursor object
+   */
+  Longo.Collection.prototype.find = function(query, projection) {
     var cmds = [{
       "cmd": "find",
-      "criteria": criteria
+      "query": query
     }, {
       "cmd": "project",
       "projection": projection
@@ -1059,10 +1265,24 @@
     return new Cursor(this, cmds);
   };
 
-  Collection.prototype.findOne = function(criteria, projection) {
+  /**
+   * Returns one document that satisfies the specified query query.
+   * If multiple documents satisfy the query, this method returns the first document according to the natural order
+   * which reflects the order of documents on the memory.
+   * In capped collections, natural order is the same as insertion order.
+   *
+   * @method
+   * @memberof Longo.Collection
+   * @param {Object} [query={}] Specifies selection query using query operators.
+   *                               To return all documents in a collection, omit this parameter or pass an empty document ({}).
+   *                               Specifies the fields to return using projection operators.
+   * @param {Object} [projection]  To return all fields in the matching document, omit this parameter.
+   * @return {Cursor} cursor Cursor object
+   */
+  Longo.Collection.prototype.findOne = function(query, projection) {
     var cmds = [{
       "cmd": "find",
-      "criteria": criteria
+      "query": query
     }, {
       "cmd": "project",
       "projection": projection
@@ -1073,7 +1293,7 @@
     return new Cursor(this, cmds);
   };
 
-  Collection.prototype.aggregate = function(pipeline) {
+  Longo.Collection.prototype.aggregate = function(pipeline) {
     var key,
       cursor = new Cursor(this, []);
     _.each(pipeline, function(op) {
@@ -1104,7 +1324,27 @@
     return cursor;
   };
 
-  Collection.prototype.save = function(doc) {
+  /**
+   * Updates an existing document or inserts a new document, depending on its document parameter.
+   *
+   * Only JSON formattable elements are supported. So `function` and `Regex` are not stored in the collection.
+   *
+   * <b>Insert</b><br>
+   * If the document does not contain an _id field, then the save() method performs an insert().<br>
+   * During the operation, the longo will create an ObjectId and assign it to the _id field.<br>
+   *
+   * <b>Upsert</b><br>
+   * If the document contains an _id field, then the save() method performs an update with upsert, querying by the _id field.<br>
+   * If a document does not exist with the specified _id value, the save() method performs an insert.<br>
+   * If a document exists with the specified _id value,<br>
+   * the save() method performs an update that replaces all fields in the existing document with the fields from the document.<br>
+   *
+   * @method
+   * @memberof Longo.Collection
+   * @param {Object} doc A document to save to the collection.
+   * @return {Cursor} cursor Cursor object
+   */
+  Longo.Collection.prototype.save = function(doc) {
     var cmd = {
       "cmd": "save",
       "doc": doc,
@@ -1112,79 +1352,200 @@
     return new Cursor(this, cmd);
   };
 
-  Collection.prototype.insert = function(doc) {
+  /**
+   * Inserts a document or documents into a collection.
+   * Different from MongoDB, this method does not accept second parameter for option.
+   *
+   * Only JSON formattable elements are supported. So `function` and `Regex` are not stored in the collection.
+   *
+   * @method
+   * @memberof Longo.Collection
+   * @param {Object | Array} document A document or array of documents to insert into the collection.
+   * @return {Cursor} cursor Cursor object
+   */
+  Longo.Collection.prototype.insert = function(document) {
     var cmd = {
       "cmd": "insert",
-      "doc": Utils.toArray(doc)
+      "doc": Utils.toArray(document)
     };
     return new Cursor(this, cmd);
   };
 
-  Collection.prototype.remove = function(criteria, justOne) {
+  /**
+   * Removes documents from a collection.
+   * @method
+   * @memberof Longo.Collection
+   * @param {Object} query Specifies deletion query using query operators.
+   *                       To delete all documents in a collection, pass an empty document ({}).
+   * @param {Boolean} [justOne] To limit the deletion to just one document, set to true.
+   *                            Omit to use the default value of false and delete all documents matching the deletion query.
+   * @return {Cursor} cursor Cursor object
+   */
+  Longo.Collection.prototype.remove = function(query, justOne) {
     var cmd = {
       "cmd": "remove",
-      "criteria": criteria,
+      "query": query,
       "justOne": justOne
     };
     return new Cursor(this, cmd);
   };
 
-  Collection.prototype.update = function(criteria, update, option) {
+  /**
+   * Modifies an existing document or documents in a collection.<br>
+   * The method can modify specific fields of existing document or documents or replace an existing document entirely,<br>
+   * depending on the update parameter.<br>
+   * By default, the update() method updates a single document.<br>
+   * Set the Multi Parameter to update all documents that match the query criteria.<br>
+   * @method
+   * @memberof Longo.Collection
+   * @param {Object} query The selection criteria for the update.
+   *                       Use the same query selectors as used in the find() method.
+   * @param {Object} update The modifications to apply.
+   * @param {Object} [option] option.
+   * @param {Boolean} [option.upsert = false] If set to true, creates a new document when no document matches the query criteria.
+   *                                          which does not insert a new document when no match is found.
+   * @param {Boolean} [option.multi = false] If set to true, updates multiple documents that meet the query criteria.
+   *                                         If set to false, updates one document.
+   * @return {Cursor} cursor Cursor object
+   */
+  Longo.Collection.prototype.update = function(query, update, option) {
     var cmd = {
       "cmd": "update",
-      "criteria": criteria,
+      "query": query,
       "update": update,
       "option": option
     };
     return new Cursor(this, cmd);
   };
 
-  Collection.prototype.drop = function() {
+  /**
+   * Drop collection from database.<br>
+   * @method
+   * @memberof Longo.Collection
+   * @param {Function} [cb] callback
+   * @return promise if cb was null
+   */
+  Longo.Collection.prototype.drop = function(cb) {
     this.emit("drop");
     this.worker.terminate();
     this.cbs = {};
     this.observers = {};
     delete this.db.collections[this.name];
     localStorage.setItem("Longo:" + this.db.name + ":" + this.name, []);
+    if (_.isFunction(cb)) return cb();
+    return Utils.defer(function(done){
+      done();
+    });
   };
 
-  Collection.prototype.count = function() {
+  /**
+   * Returns the count of documents that would match a {@link Longo.Collection#find} query.
+   * @method
+   * @memberof Longo.Collection
+   * @param {Object} query The query selection query.
+   * @return {Cursor} cursor Cursor object
+   */
+  Longo.Collection.prototype.count = function(query) {
     var cmds = [{
       "cmd": "find",
-      "criteria": {}
+      "query": query
     }, {
       "cmd": "count",
     }];
     return new Cursor(this, cmds);
   };
 
-  Collection.prototype.findAndModify = function() {
-
+  /**
+   * Return the size of the collection.
+   * @method
+   * @memberof Longo.Collection
+   * @return {Cursor} cursor Cursor object
+   */
+  Longo.Collection.prototype.dataSize = function() {
+    var cmds = [{
+      "cmd": "size",
+    }];
+    return new Cursor(this, cmds);
   };
 
+  /**
+   * Return the total size of the data in the collection.
+   * As same as {@link Longo.Collection#dataSize}
+   * @method
+   * @memberof Longo.Collection
+   * @return {Cursor} cursor Cursor object
+   */
+  Longo.Collection.prototype.totalSize = Longo.Collection.prototype.dataSize;
 
-
-  Collection.prototype.parsist = function(){
+  /**
+   * Copies all documents from collection into newCollection.<br>
+   * If newCollection does not exist, MongoDB creates it.
+   * {@link Longo.Collection.collectionCallback} will be called with the number of documents copied.<br>
+   * If the copy fails, it will be called with the error.
+   * @method
+   * @memberof Longo.Collection
+   * @param {String} newCollection Name of destination Collection.
+   * @param {Object} query The query selection query.
+   * @param  {collectionCallback} [done=null] callback for result. See {@link Longo.Collection.collectionCallback}
+   * @return {String} opId
+   */
+  Longo.Collection.prototype.copyTo = function(newCollection, done) {
     var self = this;
-    this.find({}).onValue(function(e, result){
-      localStorage.setItem("Longo:" + self.db.name + ":" + self.name, JSON.stringify(result));
+    return this.db.cloneCollection(self.name, newCollection + "", {}, function(error, newColl) {
+      if (error) {
+        return self.find({}).done(function(error2) {
+          if (error2) return done(error2);
+          return self.db.collection(newCollection + "").count().dene(done);
+        });
+      } else {
+        return newColl.count().done(done);
+      }
     });
   };
 
-  Collection.prototype.copyTo = function() {};
-  Collection.prototype.dataSize = function() {};
-  Collection.prototype.copyTo = function() {};
-  Collection.prototype.distinct = function() {};
-  Collection.prototype.group = function() {};
-  Collection.prototype.mapReduce = function() {};
-  Collection.prototype.renameCollection = function(name) {
+  /**
+   * Changes the name of an existing collection
+   * This method have side effect
+   * @method
+   * @memberof Longo.Collection
+   * @param {String} The new name of the collection.
+   */
+  Longo.Collection.prototype.renameCollection = function(name) {
     this.db.collections[name] = this;
     delete this.db.collections[this.name];
     this.name = name;
     this.logger = Utils.createLogger("Longo." + this.db.name + "." + this.name, Longo.LOGLEVEL);
   };
 
+  // @TODO
+  Longo.Collection.prototype.distinct = function() {};
+  Longo.Collection.prototype.findAndModify = function() {};
+  Longo.Collection.prototype.group = function() {};
+  Longo.Collection.prototype.mapReduce = function() {};
 
+
+
+  /**
+   * Callback structure for {@link Longo.Cursor}
+   * @callback Longo.Cursor.cursorCallback
+   * @param {Longo.Error} [error=null]  null when success
+   * @param {Array}       [result=null] null when fail
+   */
+
+  /**
+   * Do not call this class with `new` from application.<br>
+   * @name Longo.Cursor
+   * @class Cursor object with command stack.<br>
+   * Cursor itself does not have, reference to result dataset.<br>
+   * All stacked command will never triggerd until receiver method will be called.<br>
+   * Asynchronously ,result dataset will be passed to receiver.<br>
+   * @see {@link Longo.Cursor.done}
+   * @see {@link Longo.Cursor.onValue}
+   * @see {@link Longo.Cursor.assign}
+   * @see {@link Longo.Cursor.promise}
+   * @constructs
+   * @private
+   */
   var Cursor = Longo.Cursor = function() {
     var args = Utils.aSlice(arguments);
     if (args[0] instanceof Cursor) {
@@ -1201,13 +1562,18 @@
     }
   };
 
-  // for callback style
-  Cursor.prototype.done = function(cb) {
+  /**
+   * Handle result set of query with Node.js callback style receiver
+   * @method
+   * @memberof Longo.Cursor
+   * @param  {cursorCallback} cb callback for result. See {@link Longo.Cursor.cursorCallback}
+   * @return {String} opId operation id
+   */
+  Longo.Cursor.prototype.done = function(cb) {
     var self,
-        message,
-        callback,
-        userCallback = Utils.checkOrElse(cb, Utils.noop, _.isFunction)
-        ;
+      message,
+      callback,
+      userCallback = Utils.checkOrElse(cb, Utils.noop, _.isFunction);
     self = this;
     message = {
       "cmds": this.cmds
@@ -1218,11 +1584,19 @@
       userCallback.apply(null, args);
     };
 
-    return this.collection.send(message, callback);
+    return this.collection._send(message, callback);
   };
 
-  // for reactive style
-  Cursor.prototype.onValue = function(cb, skipDuplicates) {
+  /**
+   * Handle result set of query with Node.js callback style receiver<br>
+   * And observe collection with same query, callback will be executed when collection changed.
+   * @method
+   * @memberof Longo.Cursor
+   * @param  {cursorCallback} cb callback for result. See {@link Longo.Cursor.cursorCallback}
+   * @param  {Boolean} [skipDuplicates=false] skipDuplicate Set true if you do not want to receive duplicate resultset.
+   * @return {String} opId operation id
+   */
+  Longo.Cursor.prototype.onValue = function(cb, skipDuplicates) {
 
     if (_.some([
       _.contains(_.keys(this.cmds), "save"),
@@ -1230,16 +1604,15 @@
       _.contains(_.keys(this.cmds), "remove"),
       _.contains(_.keys(this.cmds), "update"),
       _.contains(_.keys(this.cmds), "drop")
-    ])){
+    ])) {
       this.collection.logger.warn("WARN:`onValue` is not supported for 'save','insert','remove','update','drop'. call `done` instead.");
       return this.done(cb);
     }
 
     var self,
-        message,
-        callback,
-        userCallback = Utils.checkOrElse(cb, Utils.noop, _.isFunction)
-        ;
+      message,
+      callback,
+      userCallback = Utils.checkOrElse(cb, Utils.noop, _.isFunction);
     self = this;
     message = {
       "cmds": this.cmds
@@ -1247,50 +1620,113 @@
 
     callback = (function() {
       var cache = null;
-      return function(){
+      return function() {
         var args = Utils.aSlice(arguments);
         _.invoke(self.wrapCb, "call");
         var hash = JSON.stringify(args[1]);
-        if(!skipDuplicates || !_.isEqual(cache, hash)){
+        if (!skipDuplicates || !_.isEqual(cache, hash)) {
           cache = hash;
           userCallback.apply(null, args);
         }
       };
     })();
 
-    return this.collection.send(message, callback, true);
+    return this.collection._send(message, callback, true);
   };
 
-  Cursor.prototype.assign = function(elementSelector, template) {
+  /**
+   * Assign result set to dom element with template.<br>
+   * And observe collection change.<br>
+   * @method
+   * @memberof Longo.Cursor
+   * @param  {String} elementSelector ElementSelector string or jQuery object Example: "p.myClass" , $("#myId")
+   * @param  {Function} template underscore.js template
+   * @return {String} opId operation id
+   * @example
+   * <caption>See live <a href="http://georgeosddev.github.io/longo/example/assign/" target="_blank">example</a> for more detail.<caption>
+   * var db = Longo.use("example");
+   * var tpl = _.template($("#resultTpl").html());
+   * db.collection("output").find({}).sort({"value":-1}).assign($("#out"), tpl);
+   */
+  Longo.Cursor.prototype.assign = function(elementSelector, template) {
     var target, cb;
+    if (!Utils.existy(elementSelector) || !Utils.existy(template)) return this.collection.logger.error("Error:Assign Result Error", new Longo.Error(Longo.Error.EXECUTION_ERROR, "invalid parameter"));
+
     if (_.isFunction(elementSelector.html)) {
-      cb = function(error, result){
-        if (error) this.collection.logger.error("Error:Assign Result Error");
-        console.log(result);
-        elementSelector.html(template({"result":result}));
+      cb = function(error, result) {
+        if (error) return this.collection.logger.error("Error:Assign Result Error", error);
+        elementSelector.html(template({
+          "result": result
+        }));
       };
     } else {
       target = document.querySelector(elementSelector);
-      cb = function(error, result){
-        if (error) this.collection.logger.error("Error:Assign Result Error");
-        target.innerHTML = template({"result":result});
+      cb = function(error, result) {
+        if (error) return this.collection.logger.error("Error:Assign Result Error", error);
+        target.innerHTML = template({
+          "result": result
+        });
       };
     }
     return this.onValue(cb, true);
   };
 
-  // Cursor.prototype.wrap = function(cb) {
-  //   return new Cursor(this, {}, cb);
-  // };
 
-  Cursor.prototype.count = function() {
+  /**
+   * Return `{@linkplain https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise | Promise}` object for query.<br>
+   * You can access result with `then` or error with `catch` method.<br>
+   * This method does not return opId.
+   * @method
+   * @memberof Longo.Cursor
+   * @return {Promise} promise object
+   */
+  Longo.Cursor.prototype.promise = function() {
+    var self = this;
+    return new Promise(function(resolve, reject) {
+      var callback = function() {
+        var args = Utils.aSlice(arguments);
+        _.invoke(self.wrapCb, "call");
+        if (args[0]) {
+          reject(args[0]);
+        } else {
+          resolve(args[1]);
+        }
+      };
+      self.collection._send({
+        cmds: self.cmds
+      }, callback);
+    });
+  };
+
+
+  /**
+   * Counts the number of documents referenced by a cursor.<br>
+   * Append the count() method to a {@link Longo.Collection#find} query to return the number of matching documents.<br>
+   * The operation does not perform the query but instead counts the results that would be returned by the query.<br>
+   * Diffeer from MongoShell, `count` does not take `applySkipLimit` parameter.<br>
+   * So this method is as same as {@link Longo.Cursor#size}
+   * @see {@link Longo.Cursor#size}
+   * @method
+   * @memberof Longo.Cursor
+   * @return {Cursor} cursor Cursor object
+   */
+  Longo.Cursor.prototype.count = function() {
     var cmd = {
       "cmd": "count"
     };
     return new Cursor(this, cmd);
   };
 
-  Cursor.prototype.forEach = function(func) {
+  /**
+   * Iterates the cursor to apply a JavaScript function to each document from the cursor.<br>
+   * The `func` will be evaluate at Worker Thread. You should care for limitation of WebWorker.<br>
+   * If you want to work at Main-Thread, You can use simply use `_.forEach` to result set in `done` function.<br>
+   * @method
+   * @memberof Longo.Cursor
+   * @func {Function} func javascript function
+   * @return {Cursor} cursor Cursor object
+   */
+  Longo.Cursor.prototype.forEach = function(func) {
     var cmd = {
       "cmd": "forEach",
       "func": "return " + func.toString() + ";"
@@ -1298,7 +1734,14 @@
     return new Cursor(this, cmd);
   };
 
-  Cursor.prototype.limit = function(num) {
+  /**
+   * Use the limit() method on a cursor to specify the maximum number of documents the cursor will return.
+   * @method
+   * @memberof Longo.Cursor
+   * @param {Number} num limit
+   * @return {Cursor} cursor Cursor object
+   */
+  Longo.Cursor.prototype.limit = function(num) {
     var cmd = {
       "cmd": "limit",
       "value": num
@@ -1306,7 +1749,17 @@
     return new Cursor(this, cmd);
   };
 
-  Cursor.prototype.map = function(func) {
+  /**
+   * Applies function to each document visited by the cursor<br>
+   * and collects the return values from successive application into an array.<br>
+   * The `func` will be evaluate at Worker Thread. You should care for limitation of WebWorker.<br>
+   * If you want to work at Main-Thread, You can use simply use `_.map` to result set in `done` function.<br>
+   * @method
+   * @memberof Longo.Cursor
+   * @func {Function} func javascript function
+   * @return {Cursor} cursor Cursor object
+   */
+  Longo.Cursor.prototype.map = function(func) {
     var cmd = {
       "cmd": "map",
       "func": "return " + func.toString() + ";"
@@ -1314,30 +1767,64 @@
     return new Cursor(this, cmd);
   };
 
-  Cursor.prototype.max = function(indexBounds) {
+  /**
+   * Specifies the exclusive upper bound for a specific field in order to constrain the results of {@link Longo.Collection#find}().<br>
+   * max() provides a way to specify an upper bound on compound field.
+   * @see {@link Longo.Cursor#min}
+   * @method
+   * @memberof Longo.Cursor
+   * @param {Object} indexBounds The exclusive upper bound for the field
+   * @return {Cursor} cursor Cursor object
+   */
+  Longo.Cursor.prototype.max = function(indexBounds) {
     var cmd = {
       "cmd": "max",
       "indexBounds": indexBounds || {}
     };
-    return new Cursor(this, cmd);
+    return new Cursor(this, cmd).limit(1);
   };
 
-  Cursor.prototype.min = function(indexBounds) {
+  /**
+   * Specifies the inclusive lower bound for a specific field in order to constrain the results of {@link Longo.Collection#find}().<br>
+   * min() provides a way to specify lower bounds on compound field.
+   * @see {@link Longo.Cursor#max}
+   * @method
+   * @memberof Longo.Cursor
+   * @param {Object} indexBounds The exclusive lower bound for the field
+   * @return {Cursor} cursor Cursor object
+   */
+  Longo.Cursor.prototype.min = function(indexBounds) {
     var cmd = {
       "cmd": "min",
       "indexBounds": indexBounds || {}
     };
-    return new Cursor(this, cmd);
+    return new Cursor(this, cmd).limit(1);
   };
 
-  Cursor.prototype.size = function() {
+  /**
+   * A count of the number of documents that match the {@link Longo.Collection#find}() query<br>
+   * after applying any cursor.skip() and cursor.limit() methods.
+   * @method
+   * @memberof Longo.Cursor
+   * @see {@link Longo.Cursor#count}
+   * @return {Cursor} cursor Cursor object
+   */
+  Longo.Cursor.prototype.size = function() {
     var cmd = {
-      "cmd": "size"
+      "cmd": "count"
     };
     return new Cursor(this, cmd);
   };
 
-  Cursor.prototype.skip = function(num) {
+  /**
+   * Call the cursor.skip() method on a cursor to control where MongoDB begins returning results.<br>
+   * This approach may be useful in implementing `paged` results.
+   * @method
+   * @memberof Longo.Cursor
+   * @param {Number} num the number to skip
+   * @return {Cursor} cursor Cursor object
+   */
+  Longo.Cursor.prototype.skip = function(num) {
     var cmd = {
       "cmd": "skip",
       "value": num
@@ -1345,24 +1832,40 @@
     return new Cursor(this, cmd);
   };
 
-  Cursor.prototype.sort = function(sorter) {
+  /**
+   * Specifies the order in which the query returns matching documents. You must apply sort().
+   * You can use sorter in two style.<br>
+   * 1.field and value pairs: in this style, value must be `1` or `-1`
+   * 2.function: the function which will be applyed to result set as `_.sort(dataset, sorter)`
+   * @method
+   * @memberof Longo.Cursor
+   * @param {Object | Function} sorter see avobe
+   * @return {Cursor} cursor Cursor object
+   */
+  Longo.Cursor.prototype.sort = function(sorter) {
     var cmd = {
       "cmd": "sort",
       "sorter": sorter
     };
-    if (_.isFunction(sorter)) cmd.func = "return " + sorter.toString() + ";";
+    if (_.isFunction(sorter)) cmd.sorter = "return " + sorter.toString() + ";";
     return new Cursor(this, cmd);
   };
 
-  Cursor.prototype.match = function(criteria) {
+  /**
+   * @private
+   */
+  Longo.Cursor.prototype.match = function(query) {
     var cmd = {
       "cmd": "find",
-      "criteria": criteria
+      "query": query
     };
     return new Cursor(this, cmd);
   };
 
-  Cursor.prototype.project = function(projection) {
+  /**
+   * @private
+   */
+  Longo.Cursor.prototype.project = function(projection) {
     var cmd = {
       "cmd": "project",
       "projection": projection
@@ -1370,7 +1873,10 @@
     return new Cursor(this, cmd);
   };
 
-  Cursor.prototype.unwind = function(projection) {
+  /**
+   * @private
+   */
+  Longo.Cursor.prototype.unwind = function(projection) {
     var cmd = {
       "cmd": "unwind",
       "projection": projection
@@ -1378,7 +1884,10 @@
     return new Cursor(this, cmd);
   };
 
-  Cursor.prototype.group = function(grouping) {
+  /**
+   * @private
+   */
+  Longo.Cursor.prototype.group = function(grouping) {
     var cmd = {
       "cmd": "group",
       "grouping": grouping
@@ -1409,24 +1918,25 @@
    * @example
    * Longo.setRoot("/javascript/vender/longo");
    */
-  Longo.setRoot = function(root){
-    if (_.isUndefined(root) || root instanceof wnd.Event) {
+  Longo.setRoot = function(root) {
+    if (typeof root !== "string") {
       root = "/Longo.js";
       var scripts = wnd.document.getElementsByTagName("script");
       var i = scripts.length;
       while (i--) {
-        var match = scripts[i].src.match(/(^|.*)\/longo(\.min){0,}\.js$/);
+        var match = scripts[i].src.match(/(^|.*)\/longo(\.min){0,}\.js(\?.*)?$/);
         if (match) {
           root = match[1];
-          if(match[2]) Longo.WORKERJS = "longoWorker.min.js";
+          if (match[2]) Longo.WORKERJS = "longoWorker.min.js"; // use min
+          if (match[3]) Longo.WORKERJS = Longo.WORKERJS + match[3]; // no cache
           break;
         }
       }
     }
-    if (Longo.LONGOROOT !== root) console.info("LONGOROOT is setted :" + root);
+    if (Longo.LONGOROOT !== root) console.info("Set LONGOROOT :" + root);
     Longo.LONGOROOT = root;
   };
-  wnd.addEventListener("load", Longo.setRoot, false);
+  if (wnd.addEventListener) wnd.addEventListener("load", Longo.setRoot, false);
 
   /**
    * Return rootPath for longo modules
@@ -1435,7 +1945,7 @@
    * @memberof Longo
    * @public
    */
-  Longo.getRoot = function(){
+  Longo.getRoot = function() {
     return Longo.LONGOROOT;
   };
 
@@ -1445,7 +1955,7 @@
    * @memberof Longo
    * @public
    */
-  Longo.useMinified = function(){
+  Longo.useMinified = function() {
     Longo.WORKERJS = "longoWorker.min.js";
   };
 
@@ -1456,23 +1966,25 @@
    * @public
    * @param {string} loglevel `log`,`debug`,`info`,`warn`,`error`
    */
-  Longo.setLogLevel = function(level){
+  Longo.setLogLevel = function(level) {
     Longo.LOGLEVEL = level;
   };
 
-  /**
-   * Return new database instance.<br>
-   * If sepcifyed name database is already exists, return that database.
-   * @name Longo.createDB
-   * @function
-   * @memberof Longo
-   * @public
-   * @param {String} [name='temp'] database name
-   * @return {DB} db
-   */
-  Longo.createDB = (function() {
+
+  (function() {
     var dbs = {};
-    return function(name){
+
+    /**
+     * Return new database instance.<br>
+     * If sepcifyed name database is already exists, return that database.
+     * @name Longo.createDB
+     * @function
+     * @memberof Longo
+     * @public
+     * @param {String} [name='temp'] database name
+     * @return {DB} db
+     */
+    Longo.createDB = function(name) {
       var dname = Utils.getOrElse(name, "temp") + "";
       var db;
       if (_.has(dbs, dname)) return dbs[dname];
@@ -1480,6 +1992,14 @@
       dbs[dname] = db;
       return db;
     };
+
+    /**
+     * @private
+     */
+    Longo._dropDB = function(name) {
+      if (dbs[name]) delete dbs[name];
+    };
+
   })();
 
   /**
@@ -1495,6 +2015,14 @@
    */
   Longo.use = Longo.createDB;
 
-  global.Longo = Longo;
+  // export for test
+  if (typeof exports !== "undefined") {
+    if (typeof module !== "undefined" && module.exports) {
+      module.exports = Longo;
+    }
+    exports.Longo = Longo;
+  } else {
+    global.Longo = Longo;
+  }
 
-})(this);
+})(this, _, (typeof EventEmitter !== undefined) ? EventEmitter : undefined);

@@ -77,6 +77,10 @@
 						</li>
 						
 						<li>
+							<a href="Longo.Cursor.html">Cursor</a>
+						</li>
+						
+						<li>
 							<a href="Longo.DB.html">DB</a>
 						</li>
 						
@@ -96,6 +100,10 @@
 						
 						<li>
 							<a href="tutorial-Documentation.html">Documentation</a>
+						</li>
+						
+						<li>
+							<a href="tutorial-Example.html">Example</a>
 						</li>
 						
 						<li>
@@ -147,14 +155,14 @@
 
 
     <section>
-        <article><h1>Longo.js</h1>
+        <article><h1>Longo.js <a href="https://travis-ci.org/georgeOsdDev/longo"><img src="https://travis-ci.org/georgeOsdDev/longo.svg?branch=dev" alt="Build Status"></a></h1>
 <p>Asynchronous local database with a flavor of FRP.
 (<code>Longo</code> means the Analects(Lunyu), in Japanese)</p>
 <blockquote>
 <p>子曰:
 学而时习之，不亦说乎</p>
 </blockquote>
-<h3>MongoDB like JavaScript Database Engine, in the local world of browser.</h3>
+<h3>MongoDB like JavaScript Database Engine, in the local browser.</h3>
 <ul>
 <li>Work in multi-thread with the power of <a href="https://developer.mozilla.org/en/docs/Web/Guide/Performance/Using_web_workers">WebWorker</a>.</li>
 <li>Work at offline with embedded NoSQL-Database.</li>
@@ -243,55 +251,149 @@ db.collection("students")
   .done(function(error, result){});
 </pre>
 
-<p>Observe document.</p>
+<h4>Observe style</h4>
+<p><code>onValue(cb, skipDuplicates)</code> offers observe style. Every data change in collection will be notified to observer.</p>
 <pre>
 var observer = db.collection("teachers")
                  .find({"val":{"$gt":5}})
                  .onValue(function(error, result){console.log(result);}))
 
-// []
+// => []
 
 db.collection("teachers")
   .update({"name":"te1"}, {"name":te1, value:20})
   .done();
 
-// observed query will be react!
-// [{"name":te1, value:20}]
+// observed query will react!
+// => [{"name":te1, value:20}]
 
 //kill
 db.killOp(observer);
 </pre>
 
-<p>Query will not executed until <code>done</code> or <code>onValue</code> is called at the end of query pipeline.</p>
+<h4>Assign style</h4>
+<p><code>assign</code> is part of <code>onValue</code>. Result set of data will be assigned to UI with underscore's template.</p>
+<pre>&lt;div id="out"&gt;&lt;/div&gt;
+&lt;script type="text/template" id="resultTpl"&gt;
+  &lt;ul&gt;
+  &lt;% if (result && result.length &gt; 0) { %&gt;
+    &lt;% _.each(result, function(data) { %&gt;
+      &lt;li id="&lt;%= data._id %&gt;" style="color:&lt;%= data.color %&gt;;"&gt;
+        &lt;p&gt;
+        &lt;span&gt;| Name: &lt;%= data.name %&gt;&lt;/span&gt;, &lt;span&gt;Value: &lt;%= data.value %&gt;&lt;/span&gt;
+        &lt;/p&gt;
+      &lt;/li&gt;
+    &lt;% }); %&gt;
+  &lt;% } %&gt;
+  &lt;/ul&gt;
+&lt;/script&gt;
+
+&lt;script type="text/javascript"&gt;
+var db = Longo.use("example");
+var tpl = _.template($("#resultTpl").html());
+db.collection("output").find({}).sort({"value":-1}).assign($("#out"), tpl);
+&lt;/script&gt;
+</pre>
+
+<h4>Promise style</h4>
+<p><code>promise</code> offers promise style. This method return <code>thenable</code> object.</p>
+<pre>
+var p = db.collection("test").find({"promise":true}).promise();
+p.then(function(result){
+  console.log(result);
+});
+p.catch(function(error){
+  console.log(error);
+});
+</pre>
+
+
+<h3>Result Dataset Receiver</h3>
+<p>All <a href="http://georgeosddev.github.io/longo/doc/Longo.Collection.html">Collection</a> methods and methods chain return <a href="http://georgeosddev.github.io/longo/doc/Longo.Cursor.html">Cursor</a> object.<br>
+Cursor itself does not have and reference to result dataset.<br>
+Query will not executed until <code>done</code> or <code>onValue</code> or <code>promise</code>, or <code>assign</code> is called at the end of method chain.<br>
+When query finished, result dataset will be passed to receiver.You can use 4 type receiver as you like.</p>
+<ul>
+<li><a href="http://georgeosddev.github.io/longo/doc/Longo.Cursor.html#done"><code>done</code></a>:
+ Handle dataset with a given Node.js Callback style handler.</li>
+<li><a href="http://georgeosddev.github.io/longo/doc/Longo.Cursor.html#onValue"><code>onValue</code></a> :
+ Subscribes a given handler function to dataset change.
+   You can use dataset as stream. This feature is inspired by <a href="https://github.com/baconjs/bacon.js#stream-onvalue">Bacon.js</a>.</li>
+<li><a href="http://georgeosddev.github.io/longo/doc/Longo.Cursor.html#promise"><code>promise</code></a> :
+Return <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise#Static_methods">Promise</a> object. You can access dataset with <code>then</code> and <code>catch</code> method.</li>
+<li><a href="http://georgeosddev.github.io/longo/doc/Longo.Cursor.html#assign"><code>assign</code></a>  :
+Assign result dataset to UI with specified template.</li>
+</ul>
 <p>For more detail : See <a href="http://georgeosddev.github.io/longo/doc">Api Reference</a> and <a href="https://github.com/georgeOsdDev/longo/tree/master/example">Examples</a>.</p>
 <h3>Query Operators</h3>
 <p>Longo use <a href="https://github.com/davidgtonge/underscore-query">underscore-query</a>'s MongoDB like APIs for query operation.</p>
 <p>You can use it's query for <code>find</code>, <code>update</code>, and <code>remove</code>.</p>
 <h2>Road Map</h2>
 <ul>
-<li><p>Next version:</p>
-<ul>
-<li>Support sort function</li>
+<li>Next version:<ul>
 <li>Support aggligation framework</li>
-<li>Basic Test/Documentation</li>
-<li>Subworker for sharding</li>
+<li>More tests</li>
+<li>Performance tuning</li>
 </ul>
 </li>
-<li><p>ver 0.1.0:</p>
+</ul>
 <ul>
+<li><p>ver 0.2.0: Code Refactoring</p>
+<ul>
+<li>Add tests.</li>
+<li>Add documents.</li>
+<li>Refactoring code</li>
+</ul>
+<ul>
+<li>ver 0.1.0: Initial release<ul>
 <li>Support basic CRUD operation</li>
 </ul>
 </li>
 </ul>
+</li>
+</ul>
 <h2>Browser Support</h2>
-<p>Longo use HTML5 <a href="https://developer.mozilla.org/en/docs/Web/Guide/Performance/Using_web_workers">Web Worker</a>.</p>
-<p>Browser compatibility is described <a href="https://developer.mozilla.org/en/docs/Web/Guide/Performance/Using_web_workers#Browser_Compatibility">here</a></p>
+<p>Longo use these native HTML5 features.</p>
+<ul>
+<li><a href="http://caniuse.com/#feat=namevalue-storage">LocalStorage</a>.</li>
+<li><a href="http://caniuse.com/#feat=promises">Promise</a>.</li>
+<li><a href="http://caniuse.com/#feat=typedarrays">TypedArray</a>.</li>
+<li><a href="http://caniuse.com/#feat=webworkers">WebWorker</a>.</li>
+</ul>
+<p>Useful polyfills is described <a href="https://github.com/Modernizr/Modernizr/wiki/HTML5-Cross-Browser-Polyfills">here</a></p>
 <h2>Develop</h2>
-<pre><code>git clone https://github.com/georgeOsdDev/longo.git
-cd longo
-npm install -g grunt-cli
-npm install
-grunt build</code></pre>
+<h3>Build</h3>
+<ol>
+<li><p>Longo is not released to npm, bower yet. You need build it from source.</p>
+<pre><code> git clone https://github.com/georgeOsdDev/longo.git
+ cd longo
+ npm install -g grunt-cli
+ npm install
+ grunt build</code></pre>
+</li>
+</ol>
+<h3>Deoloy</h3>
+<ol>
+<li><p>Start a web server in the <code>example/</code> folder.
+  Hint: if you have python installed, you can just run:</p>
+<p>  <code>python -m SimpleHTTPServer</code></p>
+</li>
+<li><p>Browse <a href="http://localhost:8000/example/todomvc/"><a href="http://localhost:8000/example/todomvc/">http://localhost:8000/example/todomvc/</a></a></p>
+</li>
+</ol>
+<h3>Test</h3>
+<p>With Browser</p>
+<pre><code>grunt connect:server:keepalive
+
+open http://localhost:9000/test/</code></pre>
+<p>With Node console(Only functional module)</p>
+<pre><code>grunt test_cui</code></pre>
+<p>With PhantomJS</p>
+<pre><code>grunt test_phantom</code></pre>
+<p><strong>Known Issue</strong></p>
+<p>Some case will fail with PhantomJS.
+So currently we run only console test with <a href="https://travis-ci.org/georgeOsdDev/longo">Travis.ci</a>.
+If all test case passed with PhantomJS, I will change travis.ci setting to use PhantomJS.</p>
 <h2>Licence</h2>
 <p>Source code can be found on <a href="https://github.com/georgeOsdDev/longo">github</a>, licenced under <a href="http://opensource.org/licenses/mit-license.php">MIT</a>.</p>
 <p>Developed by <a href="http://about.me/takeharu.oshida">Takeharu.Oshida</a>.</p></article>
@@ -319,7 +421,7 @@ grunt build</code></pre>
 					
 		<span class="jsdoc-message">
 		Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a>
-		on Mon Apr 21 2014 23:23:26 GMT+0900 (JST) using the <a href="https://github.com/terryweiss/docstrap">DocStrap template</a>.
+		on Sat Jul 19 2014 12:03:34 GMT+0900 (JST) using the <a href="https://github.com/terryweiss/docstrap">DocStrap template</a>.
 		</span>
 				</footer>
 			</div>
@@ -360,34 +462,6 @@ grunt build</code></pre>
 		} );
 	</script>
 
-	
-	<script>
-		$( function () {
-			$('#main').localScroll({
-				offset: { top: 56 } //offset by the height of your header (give or take a few px, see what works for you)
-			});
-			$( "dt h4.name" ).each( function () {
-				var $this = $( this );
-				var icon = $( "<i/>" ).addClass( "icon-plus-sign" ).addClass( "pull-right" ).addClass( "icon-white" );
-				var dt = $this.parents( "dt" );
-				var children = dt.next( "dd" );
-
-				$this.append( icon ).css( {cursor : "pointer"} );
-				$this.addClass( "member-collapsed" ).addClass( "member" );
-
-				children.hide();
-				$this.toggle( function () {
-					icon.addClass( "icon-minus-sign" ).removeClass( "icon-plus-sign" ).removeClass( "icon-white" );
-					$this.addClass( "member-open" ).removeClass( "member-collapsed" );
-					children.slideDown();
-				}, function () {
-					icon.addClass( "icon-plus-sign" ).removeClass( "icon-minus-sign" ).addClass( "icon-white" );
-					$this.addClass( "member-collapsed" ).removeClass( "member-open" );
-					children.slideUp();
-				} );
-			} );
-		} );
-	</script>
 	
 
 </body>
