@@ -206,11 +206,16 @@ You can use it's query for `find`, `update`, and `remove`.
 ## Road Map
 
  * Next version:
- 	* Support sort function
  	* Support aggligation framework
- 	* Basic Test/Documentation
+ 	* More tests
+ 	* Performance tuning
 
- * ver 0.1.0:
+* ver 0.2.0: Code Refactoring
+	* Add tests.
+	* Add documents.
+	* Refactoring code
+
+ * ver 0.1.0: Initial release
  	* Support basic CRUD operation
 
 ## Browser Support

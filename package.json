@@ -15,7 +15,7 @@
     "url": "git://github.com/georgeosddev/longo.git"
   },
   "main": "longo.js",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "scripts": {
     "build": "grunt build",
     "test": "grunt test_cui"
