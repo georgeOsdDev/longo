@@ -49,9 +49,9 @@ module.exports = (grunt) ->
         options:
           reporter: 'tap'
         src: [
-          # 'test/spec/util.js',
-          # 'test/spec/static.js',
-          # 'test/spec/cursor.js',
+          'test/spec/util.js',
+          'test/spec/static.js',
+          'test/spec/cursor.js',
           'test/spec/worker_funcs.js'
         ]
 
@@ -130,6 +130,7 @@ module.exports = (grunt) ->
 
   grunt.registerTask 'build', ['clean', 'jshint', 'uglify', 'replace', 'copy', 'jsdoc', 'test_cui']
   grunt.registerTask 'compile', ['clean', 'jshint', 'uglify', 'replace', 'copy']
+  grunt.registerTask 'test_gui', ['compile', 'connect:server:keepalive']
   grunt.registerTask 'test_cui', ['compile', 'mochaTest']
   grunt.registerTask 'test_phantom', ['compile', 'connect', 'mocha_phantomjs']
 

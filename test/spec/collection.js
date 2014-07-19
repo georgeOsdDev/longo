@@ -317,13 +317,7 @@
         col = db.getCollection("col");
         col.save([{_id:"1",val:1},{_id:"2",val:2},{_id:"3",val:2},{_id:"4",val:4},{_id:"5",val:4},{_id:"6",val:6}]).done(done);
       });
-      it("Update specified document", function(done){
-
-
-        fail();
-        // write test case
-
-
+      it.skip("@TODO: Create test about Update specified document", function(done){
         done();
       });
     });

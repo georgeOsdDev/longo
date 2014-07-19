@@ -1,2 +1,7 @@
+0.2.0: Code Refactoring
+	* Add tests.
+	* Add documents.
+	* Refactoring code
+
 0.1.0: Initial Release
 	* basic CRUD operation

@@ -103,8 +103,8 @@ Except non-CRUD operation like Sharding, Replication, Auth, etcetra are not supp
 
 ##Cursor APIs
 
-In longo, differ from MongoDB, Cursor object does not have and reference to data.
-Cursor is work as command stack, It will never executed until Cursror receiver APIs called.
+In Longo, differ from MongoDB, Cursor object does not have and reference to data.
+Cursor works as command stack, It will never executed until Cursror receiver APIs called.
 Result dataset will be passed to these receiver.
 
 |MongoDB Method        | supported | inpremented |
@@ -129,10 +129,10 @@ Result dataset will be passed to these receiver.
 |cursor.skip           | yes       | [See API](http://georgeosddev.github.io/longo/doc/Cursor.html#skip)         |
 |cursor.snapshot       | no        | -           |
 |cursor.sort           | yes       | [See API](http://georgeosddev.github.io/longo/doc/Cursor.html#sort)         |
-|cursor.toArray        | yes       | In Longo, result dataset always responsed as `Array`
+|cursor.toArray        | yes       | In Longo, result dataset always responded as `Array`
 
 
-| Cursror receiver APIs            | inpremented |
+| Commands receiver APIs           | inpremented |
 |----------------------------------|:-----------:|
 |cursor.done                       | [See API](http://georgeosddev.github.io/longo/doc/Cursor.html#done)
 |cursor.onValue                    | [See API](http://georgeosddev.github.io/longo/doc/Cursor.html#onValue)
