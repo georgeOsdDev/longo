@@ -593,7 +593,7 @@ if (typeof module !== "undefined" && module.exports) {
         var n = Date.now();
         if (n === lastNow) {
           seq++;
-          n = n + "" + Number.parseInt(seq+"", 16);
+          n = n + "" + Number(seq+"", 16);
         } else {
           lastNow = n;
           seq = 0;

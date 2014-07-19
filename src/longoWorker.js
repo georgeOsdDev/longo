@@ -77,19 +77,21 @@ if (typeof importScripts !== "undefined") {
     // "$isolated",
   ];
 
-  var ctx = {};
-  ctx.dataset = [];
-  ctx.option = {
+  var gctx = {};
+  gctx.dataset = [];
+  gctx.option = {
     capped: false
   };
-  ctx.isUpdatedBySeq = {};
+  gctx.isUpdatedBySeq = {};
 
-  Worker.getDataset = function() {
-    return ctx.dataset;
+  Worker.getDataset = function(ctx) {
+    var _ctx = ctx || gctx;
+    return _ctx.dataset;
   };
 
-  Worker.setDataset = function(dataset) {
-    ctx.dataset = dataset;
+  Worker.setDataset = function(dataset, ctx) {
+    var _ctx = ctx || gctx;
+    _ctx.dataset = dataset;
   };
 
 
@@ -138,10 +140,40 @@ if (typeof importScripts !== "undefined") {
     return result;
   };
 
+
+  Worker.parseDotQuery = function(v,k){
+    var token, parent, child, matcher;
+    if (k.indexOf(".") > 0) {
+      token = k.split(".");
+      child  = _.last(token);
+      parent = _.initial(token).join(".");
+      matcher = {};
+      matcher[child] = v;
+      return Worker.parseDotQuery({$elemMatch:matcher}, parent);
+    } else {
+      return [v, k];
+    }
+  };
+
   Worker.toQuery = function(query) {
-    return Utils.checkOrElse(query, {}, function(val) {
-      return _.isObject(val) && !_.isArray(val) && !_.isFunction(val);
+    var q = Utils.checkOrElse(query, {}, function(val) {
+      return _.isObject(val);
     });
+
+    var queryArray = {};
+    _.each(q, function(v,k){
+      if (_.contains(k, ".")){
+        var tuple = Worker.parseDotQuery(v, k);
+        var or = {};
+        or[k] = v;
+        or[tuple[1]] = tuple[0];
+        queryArray.$or = or;
+      } else {
+        queryArray[k] = v;
+      }
+    });
+
+    return queryArray;
   };
 
   Worker.toDocument = function(doc) {
@@ -165,26 +197,30 @@ if (typeof importScripts !== "undefined") {
 
   // side effect to the ctx
   Worker.doStart = function(command, seq, ctx) {
-    var _ctx = ctx || this;
+    var _ctx = ctx || gctx;
     _ctx.name = command.name;
     _ctx.option = command.option;
     _ctx.dataset = command.dataset;
+    if (!_ctx.isUpdatedBySeq) _ctx.isUpdatedBySeq = {};
     _ctx.isUpdatedBySeq[seq] = true;
     logger("Longo Collection Worker Started", "info");
     return [null, []];
   };
 
-  // side effect to the ctx
   Worker.doFind = function(dataset, query) {
-    return [null, _.query(dataset, Worker.toQuery(query))];
+    var q = Worker.toQuery(query);
+    return [null, _.query(dataset, q)];
   };
 
   // side effect to the ctx
   Worker.doInsert = function(docs, seq, ctx) {
-    var _ctx = ctx || this;
+    var _ctx = ctx || gctx;
     if (Utils.isZero(_.size(docs))) {
       return [SKIP_REST, null];
     }
+    if (!_ctx.dataset) _ctx.dataset = [];
+
+    // TODO : what does this line mean ?
     var doc = _.omit(Worker.toDocument(_.first(Utils.toArray(docs))), UPDATE_OPERATORS);
 
     if (!doc._id) {
@@ -200,6 +236,7 @@ if (typeof importScripts !== "undefined") {
       if (Worker.isSizeReached(_ctx.dataset, doc, _ctx.option.size)) {
         logger("Reached to size count for capped Collection. Size: " + _ctx.option.size, "warn");
         _ctx.dataset.shift();
+        if (_ctx.dataset.length === 0) return [SKIP_REST, null];
         return Worker.doInsert(docs, seq, _ctx);
       }
       // Check max count of dataset
@@ -216,7 +253,7 @@ if (typeof importScripts !== "undefined") {
 
   // side effect to the ctx
   Worker.updateById = function(current, doc, seq, ctx) {
-    var _ctx = ctx || this;
+    var _ctx = ctx || gctx;
     doc = Worker.toDocument(doc);
     if (doc._id && current._id !== doc._id) return [new Longo.Error(Longo.Error.MOD_ID_NOT_ALLOWED, "_id: " + doc._id), null];
 
@@ -236,9 +273,9 @@ if (typeof importScripts !== "undefined") {
     return [null, null];
   };
 
-
+  // side effect to the ctx
   Worker.doUpdate = function(query, update, option, seq, ctx) {
-    var _ctx = ctx || this;
+    var _ctx = ctx || gctx;
     var hits, current;
     hits = Worker.doFind(_ctx.dataset, query)[1];
 
@@ -261,8 +298,9 @@ if (typeof importScripts !== "undefined") {
     }
   };
 
+  // side effect to the ctx
   Worker.doSave = function(docs, seq, ctx) {
-    var _ctx = ctx || this;
+    var _ctx = ctx || gctx;
     var doc, result;
     docs = Utils.toArray(docs);
     if (Utils.isZero(_.size(docs))) {
@@ -283,8 +321,9 @@ if (typeof importScripts !== "undefined") {
     return Worker.doSave(_.rest(docs), seq, _ctx);
   };
 
+  // side effect to the ctx
   Worker.doRemove = function(query, justOne, seq, ctx) {
-    var _ctx = ctx || this;
+    var _ctx = ctx || gctx;
     var hits = Worker.doFind(_ctx.dataset, query)[1],
       ids;
 
@@ -303,7 +342,6 @@ if (typeof importScripts !== "undefined") {
     _ctx.isUpdatedBySeq[seq] = true;
     return [null, null];
   };
-
 
   Worker.doProject = function(dataset, projection) {
     var pairs = _.pairs(projection),
@@ -400,26 +438,32 @@ if (typeof importScripts !== "undefined") {
   };
 
   Worker.doSort = function(dataset, sorter) {
+    var sorted;
     /*jshint -W054 */
     if (_.isString(sorter)) {
       var f = (new Function(sorter + ""))();
       try {
-        return [null, _.sortBy(dataset, f)];
+        sorted = _.sortBy(dataset, f);
+        // remove trailing comma
+        if (_.isEmpty(_.last(sorted))) sorted = _.initial(sorted);
+        return [null, sorted];
       } catch (e) {
         return [new Longo.Error(Longo.Error.EVAL_ERROR, "sorter: " + sorter, e.stack), null];
       }
     } else {
       var key = _.keys(sorter)[0],
-        order = sorter[key],
-        sorted;
+        order = sorter[key];
       sorted = _.sortBy(dataset, key);
+
+      // remove trailing comma
+      if (_.isEmpty(_.last(sorted))) sorted = _.initial(sorted);
       if (!Utils.isOne(order)) return [null, sorted.reverse()];
       return [null, sorted];
     }
   };
 
   Worker.getExecuter = function(seq, ctx) {
-    var _ctx = ctx || this;
+    var _ctx = ctx || gctx;
     return function(memo, command) {
       var error = memo[0],
         dataset = memo[1];
@@ -498,10 +542,18 @@ if (typeof importScripts !== "undefined") {
     data = request[1] || {};
     cmds = data.cmds;
     seq = data.seq;
-    ctx.isUpdatedBySeq[seq] = false;
-    executer = Worker.getExecuter(seq, ctx);
+    gctx.isUpdatedBySeq[seq] = false;
+    executer = Worker.getExecuter(seq, gctx);
 
-    result = _.reduce(cmds, executer, [null, Worker.getDataset()]);
+    try {
+      result = _.reduce(cmds, executer, [null, Worker.getDataset()]);
+    } catch (err) {
+      return Worker.send({
+        "seq": seq,
+        "error": err,
+        "result": []
+      });
+    }
 
     if (result[0] === SKIP_REST) result[0] = null;
 
@@ -509,9 +561,8 @@ if (typeof importScripts !== "undefined") {
       "seq": seq,
       "error": result[0],
       "result": result[1],
-      "isUpdated": ctx.isUpdatedBySeq[seq]
+      "isUpdated": gctx.isUpdatedBySeq[seq]
     });
-    delete ctx.isUpdatedBySeq[seq];
   }, false);
 
   if (typeof exports !== "undefined") {
